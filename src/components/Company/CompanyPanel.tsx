@@ -30,13 +30,14 @@ import {
   InputLeftElement,
   Icon,
 } from '@chakra-ui/react'
-import { TriangleDownIcon, TriangleUpIcon, SearchIcon } from '@chakra-ui/icons'
+import { TriangleDownIcon, TriangleUpIcon, SearchIcon, TimeIcon, DownloadIcon, CalendarIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 
 export type CompanySummary = {
   id: string
   name: string
   email: string
   reference: string
+  lastLoadDate: string // ISO
 }
 
 export type BalanceBreakdown = {
@@ -299,6 +300,50 @@ export default function CompanyPanel({
         </DrawerHeader>
         <DrawerBody>
           <Stack spacing={6} py={2}>
+            {/* Timeline at the top, centered */}
+            <Card>
+              <CardBody>
+                <HStack justify="center" align="center" spacing={8} flexWrap="wrap">
+                  {(() => {
+                    const load = new Date(company.lastLoadDate)
+                    const request = new Date(load)
+                    request.setDate(load.getDate() - 2)
+                    const extract = new Date(request)
+                    extract.setHours(extract.getHours() + 2)
+                    const exportDt = new Date(load)
+                    exportDt.setDate(load.getDate() + 1)
+
+                    function fmt(d: Date) {
+                      return d.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+                    }
+
+                    function Step({ icon, label, date, color }: { icon: any; label: string; date: Date; color: string }) {
+                      return (
+                        <VStack minW="160px" spacing={2}>
+                          <Box bg={`${color}.50`} border={`2px solid`} borderColor={`${color}.300`} borderRadius="full" w="12" h="12" display="flex" alignItems="center" justifyContent="center">
+                            <Icon as={icon} color={`${color}.600`} boxSize={5} />
+                          </Box>
+                          <Text fontWeight="semibold">{label}</Text>
+                          <Text fontSize="sm" color="gray.600" textAlign="center">{fmt(date)}</Text>
+                        </VStack>
+                      )
+                    }
+
+                    return (
+                      <>
+                        <Step icon={TimeIcon} label="Request" date={request} color="blue" />
+                        <Box w="8" h="1" bg="gray.300" display={{ base: 'none', md: 'block' }} />
+                        <Step icon={DownloadIcon} label="Extract" date={extract} color="purple" />
+                        <Box w="8" h="1" bg="gray.300" display={{ base: 'none', md: 'block' }} />
+                        <Step icon={CalendarIcon} label="Load" date={load} color="green" />
+                        <Box w="8" h="1" bg="gray.300" display={{ base: 'none', md: 'block' }} />
+                        <Step icon={ExternalLinkIcon} label="Export" date={exportDt} color="teal" />
+                      </>
+                    )
+                  })()}
+                </HStack>
+              </CardBody>
+            </Card>
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
               <Card>
                 <CardBody>

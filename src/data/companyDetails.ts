@@ -4,7 +4,7 @@ import type { BalanceBreakdown, CompanySummary, Retentions, Transaction, Custome
 function pickCompany(id: string): CompanySummary | undefined {
   const c = companies.find(c => c.id === id)
   if (!c) return undefined
-  return { id: c.id, name: c.name, email: c.email, reference: c.reference }
+  return { id: c.id, name: c.name, email: c.email, reference: c.reference, lastLoadDate: c.lastLoadDate }
 }
 
 function seedBalances(salesBalance: number): BalanceBreakdown {

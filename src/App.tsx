@@ -1,5 +1,6 @@
-
-import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, Spacer, Stack, Text } from '@chakra-ui/react'
+import { useState } from 'react'
+import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button } from '@chakra-ui/react'
+import { SettingsIcon, AtSignIcon, TimeIcon } from '@chakra-ui/icons'
 import CompaniesTable from './pages/CompaniesTable'
 import StatCard from './components/Cards/StatCard'
 import { metrics } from './data/metrics'
@@ -20,17 +21,32 @@ export default function App() {
     return seedCompanies.filter(c => c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && daysSince(c.lastLoadDate) > 10).length
   })()
 
-  return (
-    <Box minH="100vh" bg="gray.50">
-      <Container maxW="7xl" py={8}>
-        <Flex align="center" mb={6} gap={4}>
-          <Heading size="lg">Open Accounting — Companies</Heading>
-          <Spacer />
-        </Flex>
+  type Section = 'Companies' | 'System' | 'User' | 'Recent Activity'
+  const [section, setSection] = useState<Section>('Companies')
+  const [showMenu, setShowMenu] = useState(false)
 
+  function NavItem({ label, icon, active, onClick }: { label: Section; icon: any; active: boolean; onClick: () => void }) {
+    return (
+      <Button
+        variant={active ? 'solid' : 'ghost'}
+        colorScheme={active ? 'blue' : undefined}
+        justifyContent="flex-start"
+        leftIcon={<Icon as={icon} />}
+        w="full"
+        size="sm"
+        onClick={onClick}
+        borderRadius="md"
+      >
+        {label}
+      </Button>
+    )
+  }
+
+  function CompaniesView() {
+    return (
+      <Stack spacing={6}>
         {/* KPI / Metrics Row */}
-        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap={4} mb={6}>
-          {/* Keep 4 cards to preserve alignment: first 3 metrics, then Queued Companies */}
+        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap={4}>
           {metrics.slice(0, 3).map((m) => (
             <GridItem key={m.id}>
               <StatCard label={m.label} value={m.value} changePct={m.changePct} trend={m.trend} helperText={m.helperText} />
@@ -40,25 +56,93 @@ export default function App() {
             <StatCard label="Queued Companies" value={String(queuedCount)} helperText="awaiting load" />
           </GridItem>
         </Grid>
+        {/* Main companies table */}
+        <CompaniesTable />
+      </Stack>
+    )
+  }
 
-        <Grid templateColumns={{ base: '1fr', lg: '2fr 1fr' }} gap={6}>
+  function SystemView() {
+    return (
+      <Card>
+        <CardBody>
+          <Stack spacing={3}>
+            <Heading size="md">System</Heading>
+            <Divider />
+            <Text color="gray.600">Manage system metadata such as currencies, export/report definitions, etc. (coming soon)</Text>
+          </Stack>
+        </CardBody>
+      </Card>
+    )
+  }
+
+  function RecentActivityView() {
+    return (
+      <Card>
+        <CardBody>
+          <Stack spacing={3}>
+            <Heading size="md">Recent Activity</Heading>
+            <Divider />
+            <Stack spacing={4}>
+              {activities.map(a => (
+                <ActivityItem key={a.id} company={a.company} action={a.action} time={a.time} meta={a.meta} />
+              ))}
+            </Stack>
+          </Stack>
+        </CardBody>
+      </Card>
+    )
+  }
+
+  function UserView() {
+    return (
+      <Card>
+        <CardBody>
+          <Stack spacing={3}>
+            <Heading size="md">User</Heading>
+            <Divider />
+            <Text color="gray.600">User settings and profile management will appear here.</Text>
+          </Stack>
+        </CardBody>
+      </Card>
+    )
+  }
+
+  return (
+    <Box minH="100vh" bg="gray.50">
+      <Container maxW="7xl" py={8}>
+        <Flex align="center" mb={6} gap={4}>
+          <Heading size="lg">Open Accounting — {section}</Heading>
+          <Spacer />
+          <Button size="sm" variant="outline" onClick={() => setShowMenu(s => !s)}>
+            {showMenu ? 'Hide menu' : 'Show menu'}
+          </Button>
+        </Flex>
+
+        <Grid templateColumns={showMenu ? { base: '1fr', lg: '240px 1fr' } : { base: '1fr', lg: '1fr' }} gap={6}>
+          {/* Left menu */}
+          {showMenu && (
+            <GridItem>
+              <Card>
+                <CardBody>
+                  <VStack align="stretch" spacing={2}>
+                    <Text fontSize="sm" color="gray.600" mb={1}>Menu</Text>
+                    <NavItem label="Companies" icon={SettingsIcon} active={section==='Companies'} onClick={() => setSection('Companies')} />
+                    <NavItem label="System" icon={SettingsIcon} active={section==='System'} onClick={() => setSection('System')} />
+                    <NavItem label="User" icon={AtSignIcon} active={section==='User'} onClick={() => setSection('User')} />
+                    <NavItem label="Recent Activity" icon={TimeIcon} active={section==='Recent Activity'} onClick={() => setSection('Recent Activity')} />
+                  </VStack>
+                </CardBody>
+              </Card>
+            </GridItem>
+          )}
+
+          {/* Main content */}
           <GridItem>
-            <CompaniesTable />
-          </GridItem>
-          <GridItem>
-            <Card>
-              <CardBody>
-                <Stack spacing={3}>
-                  <Heading size="md">Recent Activity</Heading>
-                  <Divider />
-                  <Stack spacing={4}>
-                    {activities.map(a => (
-                      <ActivityItem key={a.id} company={a.company} action={a.action} time={a.time} meta={a.meta} />
-                    ))}
-                  </Stack>
-                </Stack>
-              </CardBody>
-            </Card>
+            {section === 'Companies' && <CompaniesView />}
+            {section === 'System' && <SystemView />}
+            {section === 'Recent Activity' && <RecentActivityView />}
+            {section === 'User' && <UserView />}
           </GridItem>
         </Grid>
 

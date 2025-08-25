@@ -7,6 +7,7 @@ import { companies as seedCompanies } from '../data/companies'
 import CompanyPanel from '../components/Company/CompanyPanel'
 import { getCompanyDetails } from '../data/companyDetails'
 import CreateCompanyDialog, { CreateCompanyPayload } from '../components/Company/CreateCompanyDialog'
+import EditCompanyDialog, { CompanyConfig } from '../components/Company/EditCompanyDialog'
 
 type SortKey = keyof Pick<CompanyRow,'name'|'reference'|'lastLoadDate'|'salesBalanceGBP'|'purchaseBalanceGBP'|'status'>
 
@@ -54,6 +55,11 @@ export default function CompaniesTable() {
   }, [data, searchTerm])
 
   const sorted = useMemo(() => sortData(filtered, sortKey, sortDir), [filtered, sortKey, sortDir])
+
+  // Company config map for Exports/Reports/Pools
+  const [configMap, setConfigMap] = useState<Record<string, CompanyConfig>>({})
+  const editDialog = useDisclosure()
+  const [editTarget, setEditTarget] = useState<{ id: string; name: string; email: string } | null>(null)
 
   // Hover tooltip computation (deterministic, derived from row data)
   function toGBP(n: number) {
@@ -434,8 +440,8 @@ export default function CompaniesTable() {
             </InputGroup>
           </Box>
         </Flex>
-        <TableContainer>
-          <Table size="md" variant="simple">
+        <TableContainer overflowX="auto">
+          <Table size="md" variant="simple" minW="1000px">
             <Thead>
               <Tr>
                 <SortHeader label="Company" k="name" />
@@ -456,7 +462,12 @@ export default function CompaniesTable() {
                   connector={row.status === 'cloud' ? getConnector(row) : undefined}
                   loadStatus={getLoadStatus(row)}
                   hoverTitle={buildHoverTitle(row)}
-                  onEdit={(id) => alert('Edit ' + id)}
+                  onEdit={(id) => {
+                    const row = data.find(d => d.id === id)
+                    if (!row) return
+                    setEditTarget({ id, name: row.name, email: row.email })
+                    editDialog.onOpen()
+                  }}
                   onClear={(id) => handleClearClick(id)}
                   onSelect={(id) => { setSelectedId(id); onOpen(); }}
                   onRefresh={(id) => handleRefreshClick(id)}
@@ -468,6 +479,24 @@ export default function CompaniesTable() {
         </TableContainer>
       </CardBody>
     </Card>
+
+    {/* Edit company dialog */}
+    {editTarget && (
+      <EditCompanyDialog
+        isOpen={editDialog.isOpen}
+        onClose={() => { editDialog.onClose(); setEditTarget(null) }}
+        initialName={editTarget.name}
+        initialEmail={editTarget.email}
+        initialConfig={configMap[editTarget.id] || { exports: [], reports: [], pools: [] }}
+        onSubmit={({ name, email, config }) => {
+          // Update table data (name/email)
+          setData(prev => prev.map(r => r.id === editTarget.id ? { ...r, name, email } : r))
+          // Save config in map
+          setConfigMap(prev => ({ ...prev, [editTarget.id]: config }))
+          toast({ title: 'Company updated', description: `${name} was updated successfully.`, status: 'success', duration: 3000, isClosable: true })
+        }}
+      />
+    )}
 
     <CreateCompanyDialog
       isOpen={createDialog.isOpen}
