@@ -43,6 +43,21 @@ export default function App() {
   }
 
   function CompaniesView() {
+    // Compute latest last load date among queued companies
+    const queuedCompanies = seedCompanies.filter(c => {
+      const today = new Date()
+      const d = new Date(c.lastLoadDate)
+      const days = isNaN(d.getTime()) ? 999 : Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
+      return c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && days > 10
+    })
+    let lastQueuedLoadSubText: string | undefined
+    if (queuedCompanies.length > 0) {
+      // Find the most recent load date within queued companies (max by date)
+      const maxISO = queuedCompanies.map(c => c.lastLoadDate).sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
+      const dt = new Date(maxISO)
+      lastQueuedLoadSubText = `Last load: ${dt.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}`
+    }
+
     return (
       <Stack spacing={6}>
         {/* KPI / Metrics Row */}
@@ -53,7 +68,7 @@ export default function App() {
             </GridItem>
           ))}
           <GridItem>
-            <StatCard label="Queued Companies" value={String(queuedCount)} helperText="awaiting load" />
+            <StatCard label="Queued Companies" value={String(queuedCount)} helperText="awaiting load" subText={lastQueuedLoadSubText} />
           </GridItem>
         </Grid>
         {/* Main companies table */}

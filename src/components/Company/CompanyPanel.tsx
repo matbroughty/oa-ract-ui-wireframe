@@ -183,16 +183,20 @@ export default function CompanyPanel({
   company,
   balances,
   retentions,
-  transactions,
+  salesTransactions,
+  purchaseTransactions,
   customers,
+  suppliers,
 }: {
   isOpen: boolean
   onClose: () => void
   company: CompanySummary
   balances: BalanceBreakdown
   retentions: Retentions
-  transactions: Transaction[]
+  salesTransactions: Transaction[]
+  purchaseTransactions: Transaction[]
   customers: Customer[]
+  suppliers: Customer[]
 }) {
   const [txFilter, setTxFilter] = useState<'open' | 'closed'>('open')
   const [customerOpen, setCustomerOpen] = useState(false)
@@ -210,10 +214,20 @@ export default function CompanyPanel({
   const [custSortKey, setCustSortKey] = useState<CustSortKey>('name')
   const [custSortDir, setCustSortDir] = useState<'asc' | 'desc'>('asc')
 
-  const filteredTx = useMemo(() => transactions.filter(t => t.status === txFilter), [transactions, txFilter])
+  // Suppliers table filter/sort state
+  const [supSearch, setSupSearch] = useState('')
+  type SupSortKey = 'name' | 'reference' | 'outstanding'
+  const [supSortKey, setSupSortKey] = useState<SupSortKey>('name')
+  const [supSortDir, setSupSortDir] = useState<'asc' | 'desc'>('asc')
 
-  const sortedTx = useMemo(() => {
-    const arr = [...filteredTx]
+  // Selected party type for drill-in
+  const [selectedPartyType, setSelectedPartyType] = useState<'customer' | 'supplier'>('customer')
+
+  const filteredSalesTx = useMemo(() => salesTransactions.filter(t => t.status === txFilter), [salesTransactions, txFilter])
+  const filteredPurchTx = useMemo(() => purchaseTransactions.filter(t => t.status === txFilter), [purchaseTransactions, txFilter])
+
+  const sortedSalesTx = useMemo(() => {
+    const arr = [...filteredSalesTx]
     arr.sort((a, b) => {
       let av: number = a[txSortKey]
       let bv: number = b[txSortKey]
@@ -222,11 +236,31 @@ export default function CompanyPanel({
       return 0
     })
     return arr
-  }, [filteredTx, txSortKey, txSortDir])
+  }, [filteredSalesTx, txSortKey, txSortDir])
+
+  const sortedPurchTx = useMemo(() => {
+    const arr = [...filteredPurchTx]
+    arr.sort((a, b) => {
+      let av: number = a[txSortKey]
+      let bv: number = b[txSortKey]
+      if (av < bv) return txSortDir === 'asc' ? -1 : 1
+      if (av > bv) return txSortDir === 'asc' ? 1 : -1
+      return 0
+    })
+    return arr
+  }, [filteredPurchTx, txSortKey, txSortDir])
 
   function openCustomer(c: Customer) {
+    setSelectedPartyType('customer')
     setSelectedCustomer(c)
     setCustomerTx(seedCustomerTransactions(c, company.id))
+    setCustomerOpen(true)
+  }
+
+  function openSupplier(s: Customer) {
+    setSelectedPartyType('supplier')
+    setSelectedCustomer(s)
+    setCustomerTx(seedCustomerTransactions(s, company.id))
     setCustomerOpen(true)
   }
 
@@ -262,6 +296,29 @@ export default function CompanyPanel({
     return arr
   }, [filteredCustomers, custSortKey, custSortDir])
 
+  const filteredSuppliers = useMemo(() => {
+    const term = supSearch.trim().toLowerCase()
+    if (!term) return suppliers
+    return suppliers.filter(s =>
+      s.name.toLowerCase().includes(term) ||
+      s.reference.toLowerCase().includes(term)
+    )
+  }, [suppliers, supSearch])
+
+  const sortedSuppliers = useMemo(() => {
+    const arr = [...filteredSuppliers]
+    arr.sort((a, b) => {
+      let av: any = a[supSortKey]
+      let bv: any = b[supSortKey]
+      if (typeof av === 'string') av = av.toLowerCase()
+      if (typeof bv === 'string') bv = bv.toLowerCase()
+      if (av < bv) return supSortDir === 'asc' ? -1 : 1
+      if (av > bv) return supSortDir === 'asc' ? 1 : -1
+      return 0
+    })
+    return arr
+  }, [filteredSuppliers, supSortKey, supSortDir])
+
   function onCustSortClick(key: CustSortKey) {
     if (key === custSortKey) {
       setCustSortDir(custSortDir === 'asc' ? 'desc' : 'asc')
@@ -271,11 +328,33 @@ export default function CompanyPanel({
     }
   }
 
+  function onSupSortClick(key: SupSortKey) {
+    if (key === supSortKey) {
+      setSupSortDir(supSortDir === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSupSortKey(key)
+      setSupSortDir('asc')
+    }
+  }
+
   function SortHeader({ label, k, isNumeric }: { label: string; k: CustSortKey; isNumeric?: boolean }) {
     const active = k === custSortKey
     const dir = active ? custSortDir : undefined
     return (
       <Th cursor="pointer" onClick={() => onCustSortClick(k)} userSelect="none" isNumeric={isNumeric}>
+        <HStack spacing={1} justify={isNumeric ? 'flex-end' : 'flex-start'}>
+          <Box>{label}</Box>
+          {active && (dir === 'asc' ? <Icon as={TriangleUpIcon} /> : <Icon as={TriangleDownIcon} />)}
+        </HStack>
+      </Th>
+    )
+  }
+
+  function SupSortHeader({ label, k, isNumeric }: { label: string; k: SupSortKey; isNumeric?: boolean }) {
+    const active = k === supSortKey
+    const dir = active ? supSortDir : undefined
+    return (
+      <Th cursor="pointer" onClick={() => onSupSortClick(k)} userSelect="none" isNumeric={isNumeric}>
         <HStack spacing={1} justify={isNumeric ? 'flex-end' : 'flex-start'}>
           <Box>{label}</Box>
           {active && (dir === 'asc' ? <Icon as={TriangleUpIcon} /> : <Icon as={TriangleDownIcon} />)}
@@ -405,7 +484,7 @@ export default function CompanyPanel({
               <CardBody>
                 <Stack spacing={3}>
                   <HStack justify="space-between">
-                    <Text fontWeight="semibold">Transactions ({filteredTx.length})</Text>
+                    <Text fontWeight="semibold">Sales Ledger Items ({sortedSalesTx.length})</Text>
                     <HStack>
                       <Button size="sm" variant={txFilter==='open'?'solid':'outline'} onClick={() => setTxFilter('open')}>Open</Button>
                       <Button size="sm" variant={txFilter==='closed'?'solid':'outline'} onClick={() => setTxFilter('closed')}>Closed</Button>
@@ -438,7 +517,81 @@ export default function CompanyPanel({
                         </Tr>
                       </Thead>
                       <Tbody>
-                        {sortedTx.map(tx => {
+                        {sortedSalesTx.map(tx => {
+                          const past = daysPastDue(tx.dueDate)
+                          return (
+                            <Tr key={tx.id}>
+                              <Td>
+                                <VStack align="start" spacing={0}>
+                                  <Text fontWeight="semibold">{tx.customerName}</Text>
+                                  <Text fontSize="sm" color="gray.600">{tx.customerRef}</Text>
+                                </VStack>
+                              </Td>
+                              <Td>
+                                <Badge colorScheme={tx.notified ? 'green' : 'gray'}>{tx.notified ? 'Notified' : 'Non-notified'}</Badge>
+                              </Td>
+                              <Td>{tx.type || (tx.amount >= 0 ? 'Invoice' : 'Payment')}</Td>
+                              <Td>{tx.document}</Td>
+                              <Td>{tx.documentDate ? new Date(tx.documentDate).toLocaleDateString('en-GB') : '-'}</Td>
+                              <Td>{tx.entryDate ? new Date(tx.entryDate).toLocaleDateString('en-GB') : '-'}</Td>
+                              <Td isNumeric>{formatGBP(tx.amount)}</Td>
+                              <Td isNumeric>{formatGBP(tx.remaining)}</Td>
+                              <Td>{new Date(tx.dueDate).toLocaleDateString('en-GB')}</Td>
+                              <Td>
+                                {past > 0 ? (
+                                  <Badge colorScheme="red">{past}d</Badge>
+                                ) : (
+                                  <Badge colorScheme="green">On time</Badge>
+                                )}
+                              </Td>
+                            </Tr>
+                          )
+                        })}
+                      </Tbody>
+                    </Table>
+                  </TableContainer>
+                </Stack>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <Stack spacing={3}>
+                  <HStack justify="space-between">
+                    <Text fontWeight="semibold">Purchase Ledger Items ({sortedPurchTx.length})</Text>
+                    <HStack>
+                      <Button size="sm" variant={txFilter==='open'?'solid':'outline'} onClick={() => setTxFilter('open')}>Open</Button>
+                      <Button size="sm" variant={txFilter==='closed'?'solid':'outline'} onClick={() => setTxFilter('closed')}>Closed</Button>
+                    </HStack>
+                  </HStack>
+                  <TableContainer>
+                    <Table size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Supplier</Th>
+                          <Th>Notified</Th>
+                          <Th>Type</Th>
+                          <Th>Document</Th>
+                          <Th>Document Date</Th>
+                          <Th>Entry Date</Th>
+                          <Th isNumeric cursor="pointer" userSelect="none" onClick={() => onTxSortClick('amount')}>
+                            <HStack spacing={1} justify="flex-end">
+                              <Box>Amount</Box>
+                              {txSortKey === 'amount' && (txSortDir === 'asc' ? <Icon as={TriangleUpIcon} /> : <Icon as={TriangleDownIcon} />)}
+                            </HStack>
+                          </Th>
+                          <Th isNumeric cursor="pointer" userSelect="none" onClick={() => onTxSortClick('remaining')}>
+                            <HStack spacing={1} justify="flex-end">
+                              <Box>Remaining</Box>
+                              {txSortKey === 'remaining' && (txSortDir === 'asc' ? <Icon as={TriangleUpIcon} /> : <Icon as={TriangleDownIcon} />)}
+                            </HStack>
+                          </Th>
+                          <Th>Due</Th>
+                          <Th>Past Due</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {sortedPurchTx.map(tx => {
                           const past = daysPastDue(tx.dueDate)
                           return (
                             <Tr key={tx.id}>
@@ -516,6 +669,48 @@ export default function CompanyPanel({
                 </Stack>
               </CardBody>
             </Card>
+
+            <Card>
+              <CardBody>
+                <Stack spacing={3}>
+                  <HStack justify="space-between">
+                    <Text fontWeight="semibold">Suppliers</Text>
+                    <InputGroup maxW="320px">
+                      <InputLeftElement pointerEvents="none">
+                        <Icon as={SearchIcon} />
+                      </InputLeftElement>
+                      <Input placeholder="Filter by name or reference…" value={supSearch} onChange={e => setSupSearch(e.target.value)} />
+                    </InputGroup>
+                  </HStack>
+                  <TableContainer>
+                    <Table size="sm">
+                      <Thead>
+                        <Tr>
+                          <SupSortHeader label="Supplier" k="name" />
+                          <SupSortHeader label="Reference" k="reference" />
+                          <SupSortHeader label="Outstanding" k="outstanding" isNumeric />
+                          <Th>Status</Th>
+                          <Th>Address</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {sortedSuppliers.map(s => (
+                          <Tr key={s.id} onClick={() => openSupplier(s)} _hover={{ bg: 'gray.50' }} cursor="pointer">
+                            <Td>{s.name}</Td>
+                            <Td>{s.reference}</Td>
+                            <Td isNumeric>{formatGBP(s.outstanding)}</Td>
+                            <Td>
+                              <Badge colorScheme={s.notified ? 'green' : 'gray'}>{s.notified ? 'Notified' : 'Non-notified'}</Badge>
+                            </Td>
+                            <Td>{s.address || '-'}</Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </TableContainer>
+                </Stack>
+              </CardBody>
+            </Card>
           </Stack>
         </DrawerBody>
       </DrawerContent>
@@ -528,7 +723,7 @@ export default function CompanyPanel({
         <DrawerHeader borderBottomWidth="1px">
           <HStack justify="space-between">
             <VStack align="start" spacing={0}>
-              <Text fontWeight="semibold">{selectedCustomer?.name || 'Customer'}</Text>
+              <Text fontWeight="semibold">{selectedCustomer ? (selectedPartyType === 'supplier' ? 'Supplier' : 'Customer') : 'Customer'}</Text>
               {selectedCustomer && (
                 <Text fontSize="sm" color="gray.600">{selectedCustomer.reference}</Text>
               )}
@@ -542,7 +737,7 @@ export default function CompanyPanel({
               <Card>
                 <CardBody>
                   <Stack spacing={1}>
-                    <Text fontSize="sm" color="gray.600">Customer</Text>
+                    <Text fontSize="sm" color="gray.600">{selectedPartyType === 'supplier' ? 'Supplier' : 'Customer'}</Text>
                     <Text fontSize="lg" fontWeight="semibold">{selectedCustomer.name}</Text>
                     <Text fontSize="sm" color="gray.600">Reference: {selectedCustomer.reference}</Text>
                     <Text fontSize="sm" color="gray.600">Outstanding: {formatGBP(selectedCustomer.outstanding)}</Text>

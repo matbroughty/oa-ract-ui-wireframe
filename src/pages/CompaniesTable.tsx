@@ -308,6 +308,76 @@ export default function CompaniesTable() {
     return items.sort((a, b) => b.loadDate.localeCompare(a.loadDate))
   }
 
+  // Build demo XML content for the Extract File view
+  function buildExtractXML(s: Snapshot, companyName: string): string {
+    const loaded = new Date(s.loadDate)
+    const received = new Date(loaded.getTime() - 3 * 60 * 60 * 1000)
+    const rx = received.toISOString()
+    const lx = loaded.toISOString()
+    const customers = Array.from({ length: 5 }).map((_, i) =>
+      `    <customer id="CUST-${1000 + i}" name="Customer ${i + 1}" outstanding="${(Math.random()*20000).toFixed(2)}" />`
+    ).join('\n')
+    const suppliers = Array.from({ length: 3 }).map((_, i) =>
+      `    <supplier id="SUP-${2000 + i}" name="Supplier ${i + 1}" outstanding="${(Math.random()*15000).toFixed(2)}" />`
+    ).join('\n')
+    const transactions = Array.from({ length: 8 }).map((_, i) => {
+      const isCredit = i % 4 === 0
+      const amt = (isCredit ? -1 : 1) * (Math.random()*5000 + 100)
+      const type = isCredit ? 'Credit' : 'Invoice'
+      return `    <transaction document="DOC-${3000 + i}" type="${type}" amount="${amt.toFixed(2)}" />`
+    }).join('\n')
+    return [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      `<extract company="${companyName}">`,
+      `  <meta dateReceived="${rx}" dateLoaded="${lx}" />`,
+      '  <customers>',
+      customers,
+      '  </customers>',
+      '  <suppliers>',
+      suppliers,
+      '  </suppliers>',
+      '  <transactions>',
+      transactions,
+      '  </transactions>',
+      '</extract>'
+    ].join('\n')
+  }
+
+  // Seed snapshot exports list for Exports modal
+  function makeSnapshotExports(s: Snapshot) {
+    const produced = new Date(s.loadDate)
+    function minusMinutes(d: Date, m: number) { const x = new Date(d); x.setMinutes(d.getMinutes()-m); return x }
+    const candidates = ['Movements', 'Debtors', 'Debtors Pool', 'Movements Pool']
+    return candidates.map((name, idx) => {
+      const producedAt = new Date(produced.getTime() - idx * 2 * 60 * 1000)
+      const startedAt = minusMinutes(producedAt, 5)
+      const status = idx === 3 ? 'failure' as const : 'success' as const
+      const folder = `/exports/${name.toLowerCase().replace(/\s+/g,'-')}/${producedAt.toISOString().slice(0,10)}`
+      const apiEndpoint = `/api/exports/${name.toLowerCase().replace(/\s+/g,'-')}`
+      const fileName = `${name.replace(/\s+/g,'_')}_${producedAt.toISOString().slice(0,10)}.csv`
+      const fileContent = status === 'success' ? buildCsvForExport(name) : undefined
+      return { name, startedAt: startedAt.toISOString(), producedAt: producedAt.toISOString(), folder, apiEndpoint, status, fileName, fileContent }
+    })
+  }
+
+  function buildCsvForExport(name: string): string {
+    if (name.includes('Debtors')) {
+      const header = 'CustomerRef,CustomerName,Outstanding' 
+      const rows = Array.from({ length: 5 }).map((_, i) => `CUST${100+i},Customer ${i+1},${(Math.random()*20000).toFixed(2)}`)
+      return [header, ...rows].join('\n')
+    }
+    // Movements
+    const header = 'Document,Type,Amount,Remaining'
+    const rows = Array.from({ length: 6 }).map((_, i) => {
+      const isCredit = i % 3 === 0
+      const type = isCredit ? 'Credit' : 'Invoice'
+      const amt = (isCredit ? -1 : 1) * (Math.random()*4000+100)
+      const rem = Math.max(0, amt * (Math.random()*0.5))
+      return `DOC${3000+i},${type},${amt.toFixed(2)},${rem.toFixed(2)}`
+    })
+    return [header, ...rows].join('\n')
+  }
+
   function handleSnapshotClick(id: string) {
     const row = data.find(d => d.id === id)
     if (!row) return
@@ -372,6 +442,41 @@ export default function CompaniesTable() {
   }
   function closeSnapshotDetail() {
     setSelectedSnapshotDetail(null)
+  }
+
+  // Extract modal state and helpers
+  const [extractSnapshot, setExtractSnapshot] = useState<Snapshot | null>(null)
+  const [extractXML, setExtractXML] = useState<string>('')
+  function openExtractModal(s: Snapshot) {
+    setExtractSnapshot(s)
+    setExtractXML(buildExtractXML(s, snapshotTarget?.name || 'Company'))
+  }
+  function closeExtractModal() {
+    setExtractSnapshot(null)
+    setExtractXML('')
+  }
+
+  // Exports modal state and helpers
+  type SnapshotExport = { name: string; startedAt: string; producedAt: string; folder: string; apiEndpoint: string; status: 'success' | 'failure'; fileName: string; fileContent?: string }
+  const [exportsSnapshot, setExportsSnapshot] = useState<Snapshot | null>(null)
+  const [exportsList, setExportsList] = useState<SnapshotExport[]>([])
+  function openExportsModal(s: Snapshot) {
+    setExportsSnapshot(s)
+    setExportsList(makeSnapshotExports(s))
+  }
+  function closeExportsModal() {
+    setExportsSnapshot(null)
+    setExportsList([])
+  }
+
+  // Export file viewer
+  const [viewFile, setViewFile] = useState<{ name: string; content: string } | null>(null)
+  function openViewFile(name: string, content?: string) {
+    if (!content) return
+    setViewFile({ name, content })
+  }
+  function closeViewFile() {
+    setViewFile(null)
   }
 
   function onSortClick(key: SortKey) {
@@ -636,6 +741,7 @@ export default function CompaniesTable() {
                               {snapSortKey === 'newPaymentTotal' && (snapSortDir === 'asc' ? <Icon as={TriangleUpIcon} /> : <Icon as={TriangleDownIcon} />)}
                             </HStack>
                           </Th>
+                          <Th>Actions</Th>
                         </Tr>
                       </Thead>
                       <Tbody>
@@ -648,6 +754,12 @@ export default function CompaniesTable() {
                             <Td isNumeric>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(s.newInvoiceTotal)}</Td>
                             <Td isNumeric>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(s.newCreditTotal)}</Td>
                             <Td isNumeric>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(s.newPaymentTotal)}</Td>
+                            <Td>
+                              <HStack spacing={2}>
+                                <Button size="xs" onClick={(e) => { e.stopPropagation(); openExtractModal(s) }}>Extract File</Button>
+                                <Button size="xs" variant="outline" onClick={(e) => { e.stopPropagation(); openExportsModal(s) }}>Exports</Button>
+                              </HStack>
+                            </Td>
                           </Tr>
                         ))}
                       </Tbody>
@@ -814,6 +926,98 @@ export default function CompaniesTable() {
       </ModalContent>
     </Modal>
 
+    {/* Extract File modal */}
+    <Modal isOpen={!!extractSnapshot} onClose={closeExtractModal} size="6xl">
+      <ModalOverlay />
+      <ModalContent maxW="90vw">
+        <ModalHeader>Extract File — {snapshotTarget?.name || ''}</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody maxH="70vh" overflowY="auto">
+          {extractSnapshot && (
+            <Stack spacing={3}>
+              <HStack spacing={4}>
+                <Badge colorScheme="purple">Date received: {new Date(new Date(extractSnapshot.loadDate).getTime() - 3*60*60*1000).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</Badge>
+                <Badge colorScheme="green">Date loaded: {new Date(extractSnapshot.loadDate).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</Badge>
+              </HStack>
+              <Box borderWidth="1px" borderRadius="md" p={3} bg="gray.50" maxH="65vh" overflow="auto">
+                <Box as="pre" fontSize="sm" fontFamily="mono" whiteSpace="pre">{extractXML}</Box>
+              </Box>
+            </Stack>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={closeExtractModal}>Close</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+
+    {/* Snapshot Exports modal */}
+    <Modal isOpen={!!exportsSnapshot} onClose={closeExportsModal} size="6xl">
+      <ModalOverlay />
+      <ModalContent maxW="90vw">
+        <ModalHeader>Exports — {snapshotTarget?.name || ''}</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody maxH="70vh" overflowY="hidden">
+          <Box maxH="68vh" overflowY="auto">
+            <TableContainer>
+              <Table size="sm">
+                <Thead>
+                  <Tr>
+                    <Th>Export</Th>
+                    <Th>Started</Th>
+                    <Th>Produced</Th>
+                    <Th>Folder</Th>
+                    <Th>API Endpoint</Th>
+                    <Th>Status</Th>
+                    <Th>File</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {exportsList.map((ex, idx) => (
+                    <Tr key={ex.name+idx}>
+                      <Td>{ex.name}</Td>
+                      <Td>{new Date(ex.startedAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</Td>
+                      <Td>{new Date(ex.producedAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</Td>
+                      <Td>{ex.folder}</Td>
+                      <Td>{ex.apiEndpoint}</Td>
+                      <Td>
+                        <Badge colorScheme={ex.status==='success'?'green':'red'} textTransform="capitalize">{ex.status}</Badge>
+                      </Td>
+                      <Td>
+                        <Button size="xs" variant="outline" onClick={() => openViewFile(ex.fileName, ex.fileContent)} isDisabled={!ex.fileContent}>View file</Button>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </TableContainer>
+          </Box>
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={closeExportsModal}>Close</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+
+    {/* View Export File modal */}
+    <Modal isOpen={!!viewFile} onClose={closeViewFile} size="6xl">
+      <ModalOverlay />
+      <ModalContent maxW="90vw">
+        <ModalHeader>Export File — {viewFile?.name || ''}</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody maxH="70vh" overflowY="auto">
+          {viewFile && (
+            <Box borderWidth="1px" borderRadius="md" p={3} bg="gray.50" maxH="65vh" overflow="auto">
+              <Box as="pre" fontSize="sm" fontFamily="mono" whiteSpace="pre">{viewFile.content}</Box>
+            </Box>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={closeViewFile}>Close</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+
      {/* Cloud data refresh modal */}
      <Modal isOpen={!!refreshTarget} onClose={() => setRefreshTarget(null)}>
       <ModalOverlay />
@@ -857,8 +1061,10 @@ export default function CompaniesTable() {
         company={details.company}
         balances={details.balances}
         retentions={details.retentions}
-        transactions={details.transactions}
+        salesTransactions={details.salesTransactions}
+        purchaseTransactions={details.purchaseTransactions}
         customers={details.customers}
+        suppliers={details.suppliers}
       />
     )}
     </>

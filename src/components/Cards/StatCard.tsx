@@ -7,19 +7,21 @@ export default function StatCard({
   changePct,
   trend,
   helperText,
+  subText,
 }: {
   label: string
   value: string
   changePct?: number
   trend?: 'up' | 'down'
   helperText?: string
+  subText?: string
 }) {
   const isUp = trend === 'up'
   const color = trend ? (isUp ? 'green.500' : 'red.500') : 'gray.500'
   const IconCmp = isUp ? ArrowUpIcon : ArrowDownIcon
 
   return (
-    <Card>
+    <Card h="100%">
       <CardBody>
         <Stack spacing={2}>
           <Text fontSize="sm" color="gray.600">{label}</Text>
@@ -32,6 +34,9 @@ export default function StatCard({
                 <Badge colorScheme="gray" variant="subtle">{helperText}</Badge>
               )}
             </HStack>
+          )}
+          {subText && (
+            <Text fontSize="sm" color="gray.500">{subText}</Text>
           )}
         </Stack>
       </CardBody>

@@ -47,16 +47,14 @@ function randomDateWithin(daysFromNow: number) {
   return d.toISOString()
 }
 
-function seedTransactions(companyId: string, count = 12): Transaction[] {
+function seedSalesTransactions(companyId: string, count = 12): Transaction[] {
   const arr: Transaction[] = []
   for (let i = 0; i < count; i++) {
     const open = i % 3 !== 0 // 2/3 open by default
-    // randomly decide if this is a credit/payment (negative) or debit/invoice (positive)
     const isNegative = i % 5 === 0 // ~20% negatives for demo
     const baseAmt = Math.round((Math.random() * 5000 + 200) * 100) / 100
     const amt = isNegative ? -baseAmt : baseAmt
     const remaining = open && !isNegative ? Math.round((baseAmt * Math.random()) * 100) / 100 : 0
-    // determine type
     let type: Transaction['type']
     if (isNegative) {
       const negTypes: Transaction['type'][] = ['Payment', 'Credit Note', 'Credit Adjustment']
@@ -68,12 +66,48 @@ function seedTransactions(companyId: string, count = 12): Transaction[] {
     const documentDate = randomDateWithin(90)
     const entryDate = randomDateWithin(90)
     arr.push({
-      id: `${companyId}-tx-${i+1}`,
+      id: `${companyId}-sl-${i+1}`,
       customerName: `Customer ${i+1}`,
       customerRef: `CUST-${1000 + i}`,
       amount: amt,
       remaining,
       document: `DOC-${companyId}-${2000 + i}`,
+      dueDate: randomDateWithin(60),
+      status: open ? 'open' : 'closed',
+      type,
+      notified,
+      documentDate,
+      entryDate,
+    })
+  }
+  return arr
+}
+
+function seedPurchaseTransactions(companyId: string, count = 10): Transaction[] {
+  const arr: Transaction[] = []
+  for (let i = 0; i < count; i++) {
+    const open = i % 3 !== 0
+    const isNegative = i % 4 === 0 // some credits/payments
+    const baseAmt = Math.round((Math.random() * 4000 + 150) * 100) / 100
+    const amt = isNegative ? -baseAmt : baseAmt
+    const remaining = open && !isNegative ? Math.round((baseAmt * Math.random()) * 100) / 100 : 0
+    let type: Transaction['type']
+    if (isNegative) {
+      const negTypes: Transaction['type'][] = ['Payment', 'Credit Note', 'Credit Adjustment']
+      type = negTypes[i % negTypes.length]
+    } else {
+      type = i % 6 === 0 ? 'Debit Adjustment' : 'Invoice'
+    }
+    const notified = i % 2 === 0
+    const documentDate = randomDateWithin(90)
+    const entryDate = randomDateWithin(90)
+    arr.push({
+      id: `${companyId}-pl-${i+1}`,
+      customerName: `Supplier ${i+1}`,
+      customerRef: `SUP-${1000 + i}`,
+      amount: amt,
+      remaining,
+      document: `DOCP-${companyId}-${3000 + i}`,
       dueDate: randomDateWithin(60),
       status: open ? 'open' : 'closed',
       type,
@@ -102,13 +136,32 @@ function seedCustomers(companyId: string, count = 8): Customer[] {
   return arr
 }
 
+function seedSuppliers(companyId: string, count = 6): Customer[] {
+  const arr: Customer[] = []
+  for (let i = 0; i < count; i++) {
+    const outstanding = Math.round((Math.random() * 15000) * 100) / 100
+    const notified = i % 2 === 1
+    arr.push({
+      id: `${companyId}-sup-${i+1}`,
+      name: `Supplier ${i+1}`,
+      reference: `SUP-${companyId}-${200 + i}`,
+      outstanding,
+      address: `${20 + i} Industrial Estate, Cityville`,
+      notified,
+    })
+  }
+  return arr
+}
+
 export function getCompanyDetails(id: string) {
   const comp = companies.find(c => c.id === id)
   const company = pickCompany(id)
   if (!comp || !company) return undefined
   const balances = seedBalances(comp.salesBalanceGBP)
   const retentions = seedRetentions(Math.abs(Math.round(comp.salesBalanceGBP)))
-  const transactions = seedTransactions(id)
+  const salesTransactions = seedSalesTransactions(id)
+  const purchaseTransactions = seedPurchaseTransactions(id)
   const customers = seedCustomers(id)
-  return { company, balances, retentions, transactions, customers }
+  const suppliers = seedSuppliers(id)
+  return { company, balances, retentions, salesTransactions, purchaseTransactions, customers, suppliers }
 }
