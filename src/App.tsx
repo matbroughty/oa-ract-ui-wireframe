@@ -61,18 +61,22 @@ export default function App() {
     return (
       <Stack spacing={6}>
         {/* KPI / Metrics Row */}
-        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap={4}>
-          {metrics.slice(0, 3).map((m) => (
-            <GridItem key={m.id}>
-              <StatCard label={m.label} value={m.value} changePct={m.changePct} trend={m.trend} helperText={m.helperText} />
+        <Box px={{ base: 3, md: 4 }}>
+          <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap={4}>
+            {metrics.slice(0, 3).map((m) => (
+              <GridItem key={m.id}>
+                <StatCard label={m.label} value={m.value} changePct={m.changePct} trend={m.trend} helperText={m.helperText} />
+              </GridItem>
+            ))}
+            <GridItem>
+              <StatCard label="Queued Companies" value={String(queuedCount)} helperText="awaiting load" subText={lastQueuedLoadSubText} />
             </GridItem>
-          ))}
-          <GridItem>
-            <StatCard label="Queued Companies" value={String(queuedCount)} helperText="awaiting load" subText={lastQueuedLoadSubText} />
-          </GridItem>
-        </Grid>
+          </Grid>
+        </Box>
         {/* Main companies table */}
-        <CompaniesTable />
+        <Box px={{ base: 3, md: 4 }}>
+          <CompaniesTable />
+        </Box>
       </Stack>
     )
   }
@@ -237,14 +241,26 @@ export default function App() {
 
   return (
     <Box minH="100vh" bg="gray.50">
-      <Container maxW="7xl" py={8}>
-        <Flex align="center" mb={6} gap={4}>
-          <Heading size="lg">Open Accounting — {section}</Heading>
-          <Spacer />
-          <Button size="sm" variant="outline" onClick={() => setShowMenu(s => !s)}>
-            {showMenu ? 'Hide menu' : 'Show menu'}
-          </Button>
-        </Flex>
+      <Container maxW={(section === 'Companies' && !showMenu) ? '100%' : '7xl'} py={8} px={(section === 'Companies' && !showMenu) ? 0 : undefined}>
+        {section === 'Companies' && !showMenu ? (
+          <Box px={{ base: 3, md: 4 }}>
+            <Flex align="center" mb={6} gap={4}>
+              <Heading size="lg">Open Accounting — {section}</Heading>
+              <Spacer />
+              <Button size="sm" variant="outline" onClick={() => setShowMenu(s => !s)}>
+                {showMenu ? 'Hide menu' : 'Show menu'}
+              </Button>
+            </Flex>
+          </Box>
+        ) : (
+          <Flex align="center" mb={6} gap={4}>
+            <Heading size="lg">Open Accounting — {section}</Heading>
+            <Spacer />
+            <Button size="sm" variant="outline" onClick={() => setShowMenu(s => !s)}>
+              {showMenu ? 'Hide menu' : 'Show menu'}
+            </Button>
+          </Flex>
+        )}
 
         <Grid templateColumns={showMenu ? { base: '1fr', lg: '240px 1fr' } : { base: '1fr', lg: '1fr' }} gap={6}>
           {/* Left menu */}
