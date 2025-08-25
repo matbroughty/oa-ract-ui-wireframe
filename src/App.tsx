@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast } from '@chakra-ui/react'
-import { SettingsIcon, AtSignIcon, TimeIcon, InfoIcon } from '@chakra-ui/icons'
+import { SettingsIcon, AtSignIcon, TimeIcon, InfoIcon, ViewIcon } from '@chakra-ui/icons'
 import CompaniesTable from './pages/CompaniesTable'
 import StatCard from './components/Cards/StatCard'
 import { metrics } from './data/metrics'
@@ -123,6 +123,118 @@ export default function App() {
     )
   }
 
+  // Survey dashboard view
+  function SurveyView() {
+    const toast = useToast()
+    const [riskScore, setRiskScore] = useState<number>(() => Math.round(50 + Math.random() * 50))
+    const [lastSurveyISO, setLastSurveyISO] = useState<string>(() => new Date().toISOString())
+
+    function rerunSurvey() {
+      // Simulate a new survey run
+      const nextScore = Math.max(1, Math.min(100, Math.round(riskScore + (Math.random() * 20 - 10))))
+      setRiskScore(nextScore)
+      const now = new Date().toISOString()
+      setLastSurveyISO(now)
+      toast({ title: 'Survey re-run requested', description: 'A new survey has been initiated and results updated.', status: 'info', duration: 3000, isClosable: true })
+    }
+
+    const lastSurveyText = new Date(lastSurveyISO).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+
+    // Simple inline SVG charts (bar and line) for a generic dashboard
+    function RiskCategoryBars() {
+      const cats = [
+        { label: 'Financial', value: 30 },
+        { label: 'Operational', value: 24 },
+        { label: 'Compliance', value: 18 },
+        { label: 'Market', value: 14 },
+        { label: 'Other', value: 8 },
+      ]
+      const max = Math.max(...cats.map(c => c.value), 1)
+      return (
+        <VStack align="stretch" spacing={2}>
+          {cats.map((c) => {
+            const pct = Math.round((c.value / max) * 100)
+            return (
+              <HStack key={c.label} spacing={3}>
+                <Box w="140px" fontSize="sm" color="gray.600">{c.label}</Box>
+                <Box flex="1">
+                  <Box bg="gray.200" h="6" borderRadius="md" overflow="hidden">
+                    <Box bg="orange.400" h="100%" width={`${pct}%`} />
+                  </Box>
+                </Box>
+                <Text w="60px" textAlign="right" fontWeight="semibold">{c.value}</Text>
+              </HStack>
+            )
+          })}
+        </VStack>
+      )
+    }
+
+    function ScoreTrendLine() {
+      const w = 800, h = 200, pad = 32
+      const points = Array.from({ length: 12 }).map((_, i) => 40 + Math.round(Math.sin(i/2) * 10) + Math.round(Math.random()*8))
+      const minV = Math.min(...points, 0), maxV = Math.max(...points, 100)
+      const x = (i: number) => pad + (i * (w - 2 * pad)) / Math.max(1, points.length - 1)
+      const y = (v: number) => h - pad - ((v - minV) * (h - 2 * pad)) / Math.max(1, (maxV - minV) || 1)
+      const path = points.map((v, i) => `${i === 0 ? 'M' : 'L'} ${x(i)} ${y(v)}`).join(' ')
+      return (
+        <Box w="100%" h="220px">
+          <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="100%">
+            <line x1={pad} y1={h-pad} x2={w-pad} y2={h-pad} stroke="#CBD5E0" />
+            <line x1={pad} y1={pad} x2={pad} y2={h-pad} stroke="#CBD5E0" />
+            <path d={path} fill="none" stroke="#2B6CB0" strokeWidth="2" />
+          </svg>
+        </Box>
+      )
+    }
+
+    return (
+      <Stack spacing={6}>
+        <HStack justify="space-between" align="center">
+          <Heading size="md">Survey Dashboard</Heading>
+          <Button leftIcon={<Icon as={InfoIcon} />} colorScheme="blue" onClick={rerunSurvey}>Re-run Survey</Button>
+        </HStack>
+        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap={4}>
+          <GridItem>
+            <StatCard label="Risk Score" value={`${riskScore}/100`} helperText="latest" />
+          </GridItem>
+          <GridItem>
+            <StatCard label="Last Survey" value={lastSurveyText} />
+          </GridItem>
+          <GridItem>
+            <StatCard label="Risk Level" value={riskScore >= 75 ? 'High' : riskScore >= 50 ? 'Medium' : 'Low'} />
+          </GridItem>
+          <GridItem>
+            <StatCard label="Surveys in Year" value={String(4)} />
+          </GridItem>
+        </Grid>
+
+        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
+          <GridItem>
+            <Card>
+              <CardBody>
+                <Stack spacing={2}>
+                  <Text fontSize="sm" color="gray.600">Risk Categories</Text>
+                  <RiskCategoryBars />
+                </Stack>
+              </CardBody>
+            </Card>
+          </GridItem>
+          <GridItem>
+            <Card>
+              <CardBody>
+                <Stack spacing={2}>
+                  <Text fontSize="sm" color="gray.600">Score Trend (12 months)</Text>
+                  <ScoreTrendLine />
+                </Stack>
+              </CardBody>
+            </Card>
+          </GridItem>
+        </Grid>
+      </Stack>
+    )
+  }
+
   return (
     <Box minH="100vh" bg="gray.50">
       <Container maxW="7xl" py={8}>
@@ -142,10 +254,11 @@ export default function App() {
                 <CardBody>
                   <VStack align="stretch" spacing={2}>
                     <Text fontSize="sm" color="gray.600" mb={1}>Menu</Text>
-                    <NavItem label="Companies" icon={SettingsIcon} active={section==='Companies'} onClick={() => setSection('Companies')} />
+                    <NavItem label="Companies" icon={ViewIcon} active={section==='Companies'} onClick={() => setSection('Companies')} />
                     <NavItem label="System" icon={SettingsIcon} active={section==='System'} onClick={() => setSection('System')} />
                     <NavItem label="User" icon={AtSignIcon} active={section==='User'} onClick={() => setSection('User')} />
                     <NavItem label="Recent Activity" icon={TimeIcon} active={section==='Recent Activity'} onClick={() => setSection('Recent Activity')} />
+                    <NavItem label="Survey" icon={InfoIcon} active={section==='Survey'} onClick={() => setSection('Survey')} />
                   </VStack>
                 </CardBody>
               </Card>
@@ -158,6 +271,7 @@ export default function App() {
             {section === 'System' && <SystemView />}
             {section === 'Recent Activity' && <RecentActivityView />}
             {section === 'User' && <UserView />}
+            {section === 'Survey' && <SurveyView />}
           </GridItem>
         </Grid>
 
