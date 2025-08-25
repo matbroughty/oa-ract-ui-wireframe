@@ -1,0 +1,548 @@
+import { useMemo, useState } from 'react'
+import {
+  Badge,
+  Box,
+  Button,
+  Card,
+  CardBody,
+  Divider,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerHeader,
+  DrawerOverlay,
+  Grid,
+  GridItem,
+  HStack,
+  SimpleGrid,
+  Stack,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  Text,
+  VStack,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Icon,
+} from '@chakra-ui/react'
+import { TriangleDownIcon, TriangleUpIcon, SearchIcon } from '@chakra-ui/icons'
+
+export type CompanySummary = {
+  id: string
+  name: string
+  email: string
+  reference: string
+}
+
+export type BalanceBreakdown = {
+  salesLedgerBalance: number
+  notifiedSalesLedgerBalance: number
+  invoices: number
+  creditNotes: number
+  openCash: number
+}
+
+export type Retentions = {
+  ageing: number
+  manual: number
+  concentration: number
+  funding: number
+  contra: number
+  approved: number
+}
+
+export type Transaction = {
+  id: string
+  customerName: string
+  customerRef: string
+  amount: number
+  remaining: number
+  document: string
+  dueDate: string // ISO
+  status: 'open' | 'closed'
+  notified?: boolean
+  type?: 'Invoice' | 'Debit Adjustment' | 'Payment' | 'Credit Note' | 'Credit Adjustment'
+  documentDate?: string // ISO
+  entryDate?: string // ISO
+}
+
+export type Customer = {
+  id: string
+  name: string
+  reference: string
+  outstanding: number
+  address?: string
+  notified?: boolean
+}
+
+function formatGBP(value: number) {
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(value)
+}
+
+function daysPastDue(dueDateISO: string) {
+  const due = new Date(dueDateISO)
+  const today = new Date()
+  const diff = Math.floor((today.getTime() - due.getTime()) / (1000 * 60 * 60 * 24))
+  return diff > 0 ? diff : 0
+}
+
+function BarChart({ data }: { data: Retentions }) {
+  const entries = Object.entries(data) as [keyof Retentions, number][]
+  const total = entries.reduce((s, [, v]) => s + v, 0) || 1
+  return (
+    <VStack align="stretch" spacing={2}>
+      {entries.map(([k, v]) => {
+        const pct = Math.round((v / total) * 100)
+        return (
+          <HStack key={k} spacing={3}>
+            <Box w="120px" textTransform="capitalize" fontSize="sm" color="gray.600">{k}</Box>
+            <Box flex="1">
+              <Box bg="gray.200" h="6" borderRadius="md" overflow="hidden">
+                <Box bg="blue.500" h="100%" width={`${pct}%`} />
+              </Box>
+            </Box>
+            <Text w="60px" textAlign="right" fontWeight="semibold">{pct}%</Text>
+          </HStack>
+        )
+      })}
+    </VStack>
+  )
+}
+
+function TopCustomersChart({ customers, onSelect }: { customers: Customer[]; onSelect: (c: Customer) => void }) {
+  const top = [...customers].sort((a, b) => (b.outstanding || 0) - (a.outstanding || 0)).slice(0, 10)
+  const max = Math.max(1, ...top.map(c => c.outstanding || 0))
+  return (
+    <VStack align="stretch" spacing={2}>
+      {top.map((c) => {
+        const pct = Math.max(1, Math.round(((c.outstanding || 0) / max) * 100))
+        return (
+          <HStack key={c.id} spacing={3} cursor="pointer" _hover={{ opacity: 0.9 }} onClick={() => onSelect(c)}>
+            <Box w="220px">
+              <Text fontSize="sm" fontWeight="semibold" noOfLines={1}>{c.name}</Text>
+              <Text fontSize="xs" color="gray.600" noOfLines={1}>{c.reference}</Text>
+            </Box>
+            <Box flex="1">
+              <Box bg="gray.200" h="6" borderRadius="md" overflow="hidden">
+                <Box bg="purple.500" h="100%" width={`${pct}%`} />
+              </Box>
+            </Box>
+            <Text w="100px" textAlign="right" fontWeight="semibold">{formatGBP(c.outstanding)}</Text>
+          </HStack>
+        )
+      })}
+    </VStack>
+  )
+}
+
+function seedCustomerTransactions(customer: Customer, companyId: string, count = 10): Transaction[] {
+  const arr: Transaction[] = []
+  for (let i = 0; i < count; i++) {
+    const open = i % 2 === 0
+    const isNegative = i % 5 === 0
+    const baseAmt = Math.round((Math.random() * 4000 + 150) * 100) / 100
+    const amt = isNegative ? -baseAmt : baseAmt
+    const remaining = open && !isNegative ? Math.round((baseAmt * Math.random()) * 100) / 100 : 0
+    let type: Transaction['type']
+    if (isNegative) {
+      const negTypes: Transaction['type'][] = ['Payment', 'Credit Note', 'Credit Adjustment']
+      type = negTypes[i % negTypes.length]
+    } else {
+      type = i % 7 === 0 ? 'Debit Adjustment' : 'Invoice'
+    }
+    const notified = i % 2 === 0
+    const documentDate = new Date(Date.now() + (Math.random()*90-45) * 24 * 60 * 60 * 1000).toISOString()
+    const entryDate = new Date(Date.now() + (Math.random()*90-45) * 24 * 60 * 60 * 1000).toISOString()
+    arr.push({
+      id: `${companyId}-${customer.id}-tx-${i+1}`,
+      customerName: customer.name,
+      customerRef: customer.reference,
+      amount: amt,
+      remaining,
+      document: `DOC-${companyId}-${i + 1}`,
+      dueDate: new Date(Date.now() + (Math.random()*60-30) * 24 * 60 * 60 * 1000).toISOString(),
+      status: open ? 'open' : 'closed',
+      type,
+      notified,
+      documentDate,
+      entryDate,
+    })
+  }
+  return arr
+}
+
+export default function CompanyPanel({
+  isOpen,
+  onClose,
+  company,
+  balances,
+  retentions,
+  transactions,
+  customers,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  company: CompanySummary
+  balances: BalanceBreakdown
+  retentions: Retentions
+  transactions: Transaction[]
+  customers: Customer[]
+}) {
+  const [txFilter, setTxFilter] = useState<'open' | 'closed'>('open')
+  const [customerOpen, setCustomerOpen] = useState(false)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [customerTx, setCustomerTx] = useState<Transaction[]>([])
+
+  // Transactions sort state (Amount and Remaining)
+  type TxSortKey = 'amount' | 'remaining'
+  const [txSortKey, setTxSortKey] = useState<TxSortKey>('amount')
+  const [txSortDir, setTxSortDir] = useState<'asc' | 'desc'>('asc')
+
+  // Customers table filter/sort state
+  const [custSearch, setCustSearch] = useState('')
+  type CustSortKey = 'name' | 'reference' | 'outstanding'
+  const [custSortKey, setCustSortKey] = useState<CustSortKey>('name')
+  const [custSortDir, setCustSortDir] = useState<'asc' | 'desc'>('asc')
+
+  const filteredTx = useMemo(() => transactions.filter(t => t.status === txFilter), [transactions, txFilter])
+
+  const sortedTx = useMemo(() => {
+    const arr = [...filteredTx]
+    arr.sort((a, b) => {
+      let av: number = a[txSortKey]
+      let bv: number = b[txSortKey]
+      if (av < bv) return txSortDir === 'asc' ? -1 : 1
+      if (av > bv) return txSortDir === 'asc' ? 1 : -1
+      return 0
+    })
+    return arr
+  }, [filteredTx, txSortKey, txSortDir])
+
+  function openCustomer(c: Customer) {
+    setSelectedCustomer(c)
+    setCustomerTx(seedCustomerTransactions(c, company.id))
+    setCustomerOpen(true)
+  }
+
+  function onTxSortClick(key: TxSortKey) {
+    if (key === txSortKey) {
+      setTxSortDir(txSortDir === 'asc' ? 'desc' : 'asc')
+    } else {
+      setTxSortKey(key)
+      setTxSortDir('asc')
+    }
+  }
+
+  const filteredCustomers = useMemo(() => {
+    const term = custSearch.trim().toLowerCase()
+    if (!term) return customers
+    return customers.filter(c =>
+      c.name.toLowerCase().includes(term) ||
+      c.reference.toLowerCase().includes(term)
+    )
+  }, [customers, custSearch])
+
+  const sortedCustomers = useMemo(() => {
+    const arr = [...filteredCustomers]
+    arr.sort((a, b) => {
+      let av: any = a[custSortKey]
+      let bv: any = b[custSortKey]
+      if (typeof av === 'string') av = av.toLowerCase()
+      if (typeof bv === 'string') bv = bv.toLowerCase()
+      if (av < bv) return custSortDir === 'asc' ? -1 : 1
+      if (av > bv) return custSortDir === 'asc' ? 1 : -1
+      return 0
+    })
+    return arr
+  }, [filteredCustomers, custSortKey, custSortDir])
+
+  function onCustSortClick(key: CustSortKey) {
+    if (key === custSortKey) {
+      setCustSortDir(custSortDir === 'asc' ? 'desc' : 'asc')
+    } else {
+      setCustSortKey(key)
+      setCustSortDir('asc')
+    }
+  }
+
+  function SortHeader({ label, k, isNumeric }: { label: string; k: CustSortKey; isNumeric?: boolean }) {
+    const active = k === custSortKey
+    const dir = active ? custSortDir : undefined
+    return (
+      <Th cursor="pointer" onClick={() => onCustSortClick(k)} userSelect="none" isNumeric={isNumeric}>
+        <HStack spacing={1} justify={isNumeric ? 'flex-end' : 'flex-start'}>
+          <Box>{label}</Box>
+          {active && (dir === 'asc' ? <Icon as={TriangleUpIcon} /> : <Icon as={TriangleDownIcon} />)}
+        </HStack>
+      </Th>
+    )
+  }
+
+  return (
+    <>
+    <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="xl">
+      <DrawerOverlay />
+      <DrawerContent w={{ base: '100%', md: '85vw', lg: '80vw' }} maxW="none">
+        <DrawerHeader borderBottomWidth="1px">
+          <HStack justify="space-between">
+            <VStack align="start" spacing={0}>
+              <Text fontWeight="semibold">{company.name}</Text>
+              <Text fontSize="sm" color="gray.600">{company.reference} · {company.email}</Text>
+            </VStack>
+            <Button onClick={onClose} variant="outline">Close</Button>
+          </HStack>
+        </DrawerHeader>
+        <DrawerBody>
+          <Stack spacing={6} py={2}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+              <Card>
+                <CardBody>
+                  <Stack spacing={1}>
+                    <Text fontSize="sm" color="gray.600">Company party</Text>
+                    <Text fontSize="lg" fontWeight="semibold">{company.name}</Text>
+                    <Text fontSize="sm" color="gray.600">{company.email}</Text>
+                    <Text fontSize="sm" color="gray.600">Reference: {company.reference}</Text>
+                  </Stack>
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody>
+                  <Stack spacing={3}>
+                    <Text fontSize="sm" color="gray.600">Balances</Text>
+                    <Grid templateColumns="1fr auto" rowGap={2} columnGap={4}>
+                      <Text>Sales ledger balance</Text>
+                      <Text fontWeight="semibold">{formatGBP(balances.salesLedgerBalance)}</Text>
+                      <Text>Notified sales ledger</Text>
+                      <Text fontWeight="semibold">{formatGBP(balances.notifiedSalesLedgerBalance)}</Text>
+                    </Grid>
+                    <Divider />
+                    <Grid templateColumns="1fr auto" rowGap={2} columnGap={4}>
+                      <Text color="gray.600">Invoices</Text>
+                      <Text>{formatGBP(balances.invoices)}</Text>
+                      <Text color="gray.600">Credit notes</Text>
+                      <Text>{formatGBP(balances.creditNotes)}</Text>
+                      <Text color="gray.600">Open cash</Text>
+                      <Text>{formatGBP(balances.openCash)}</Text>
+                    </Grid>
+                  </Stack>
+                </CardBody>
+              </Card>
+            </SimpleGrid>
+
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+              <Card>
+                <CardBody>
+                  <Stack spacing={3}>
+                    <Text fontSize="sm" color="gray.600">Retentions</Text>
+                    <BarChart data={retentions} />
+                  </Stack>
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody>
+                  <Stack spacing={3}>
+                    <HStack justify="space-between">
+                      <Text fontSize="sm" color="gray.600">Top Customers</Text>
+                      <Badge colorScheme="purple">Top 10</Badge>
+                    </HStack>
+                    <TopCustomersChart customers={customers} onSelect={openCustomer} />
+                  </Stack>
+                </CardBody>
+              </Card>
+            </SimpleGrid>
+
+            <Card>
+              <CardBody>
+                <Stack spacing={3}>
+                  <HStack justify="space-between">
+                    <Text fontWeight="semibold">Transactions ({filteredTx.length})</Text>
+                    <HStack>
+                      <Button size="sm" variant={txFilter==='open'?'solid':'outline'} onClick={() => setTxFilter('open')}>Open</Button>
+                      <Button size="sm" variant={txFilter==='closed'?'solid':'outline'} onClick={() => setTxFilter('closed')}>Closed</Button>
+                    </HStack>
+                  </HStack>
+                  <TableContainer>
+                    <Table size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Customer</Th>
+                          <Th>Notified</Th>
+                          <Th>Type</Th>
+                          <Th>Document</Th>
+                          <Th>Document Date</Th>
+                          <Th>Entry Date</Th>
+                          <Th isNumeric cursor="pointer" userSelect="none" onClick={() => onTxSortClick('amount')}>
+                            <HStack spacing={1} justify="flex-end">
+                              <Box>Amount</Box>
+                              {txSortKey === 'amount' && (txSortDir === 'asc' ? <Icon as={TriangleUpIcon} /> : <Icon as={TriangleDownIcon} />)}
+                            </HStack>
+                          </Th>
+                          <Th isNumeric cursor="pointer" userSelect="none" onClick={() => onTxSortClick('remaining')}>
+                            <HStack spacing={1} justify="flex-end">
+                              <Box>Remaining</Box>
+                              {txSortKey === 'remaining' && (txSortDir === 'asc' ? <Icon as={TriangleUpIcon} /> : <Icon as={TriangleDownIcon} />)}
+                            </HStack>
+                          </Th>
+                          <Th>Due</Th>
+                          <Th>Past Due</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {sortedTx.map(tx => {
+                          const past = daysPastDue(tx.dueDate)
+                          return (
+                            <Tr key={tx.id}>
+                              <Td>
+                                <VStack align="start" spacing={0}>
+                                  <Text fontWeight="semibold">{tx.customerName}</Text>
+                                  <Text fontSize="sm" color="gray.600">{tx.customerRef}</Text>
+                                </VStack>
+                              </Td>
+                              <Td>
+                                <Badge colorScheme={tx.notified ? 'green' : 'gray'}>{tx.notified ? 'Notified' : 'Non-notified'}</Badge>
+                              </Td>
+                              <Td>{tx.type || (tx.amount >= 0 ? 'Invoice' : 'Payment')}</Td>
+                              <Td>{tx.document}</Td>
+                              <Td>{tx.documentDate ? new Date(tx.documentDate).toLocaleDateString('en-GB') : '-'}</Td>
+                              <Td>{tx.entryDate ? new Date(tx.entryDate).toLocaleDateString('en-GB') : '-'}</Td>
+                              <Td isNumeric>{formatGBP(tx.amount)}</Td>
+                              <Td isNumeric>{formatGBP(tx.remaining)}</Td>
+                              <Td>{new Date(tx.dueDate).toLocaleDateString('en-GB')}</Td>
+                              <Td>
+                                {past > 0 ? (
+                                  <Badge colorScheme="red">{past}d</Badge>
+                                ) : (
+                                  <Badge colorScheme="green">On time</Badge>
+                                )}
+                              </Td>
+                            </Tr>
+                          )
+                        })}
+                      </Tbody>
+                    </Table>
+                  </TableContainer>
+                </Stack>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardBody>
+                <Stack spacing={3}>
+                  <HStack justify="space-between">
+                    <Text fontWeight="semibold">Customers</Text>
+                    <InputGroup maxW="320px">
+                      <InputLeftElement pointerEvents="none">
+                        <Icon as={SearchIcon} />
+                      </InputLeftElement>
+                      <Input placeholder="Filter by name or reference…" value={custSearch} onChange={e => setCustSearch(e.target.value)} />
+                    </InputGroup>
+                  </HStack>
+                  <TableContainer>
+                    <Table size="sm">
+                      <Thead>
+                        <Tr>
+                          <SortHeader label="Customer" k="name" />
+                          <SortHeader label="Reference" k="reference" />
+                          <SortHeader label="Outstanding" k="outstanding" isNumeric />
+                          <Th>Status</Th>
+                          <Th>Address</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {sortedCustomers.map(c => (
+                          <Tr key={c.id} onClick={() => openCustomer(c)} _hover={{ bg: 'gray.50' }} cursor="pointer">
+                            <Td>{c.name}</Td>
+                            <Td>{c.reference}</Td>
+                            <Td isNumeric>{formatGBP(c.outstanding)}</Td>
+                            <Td>
+                              <Badge colorScheme={c.notified ? 'green' : 'gray'}>{c.notified ? 'Notified' : 'Non-notified'}</Badge>
+                            </Td>
+                            <Td>{c.address || '-'}</Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </TableContainer>
+                </Stack>
+              </CardBody>
+            </Card>
+          </Stack>
+        </DrawerBody>
+      </DrawerContent>
+    </Drawer>
+
+    {/* Customer panel */}
+    <Drawer isOpen={customerOpen} placement="right" onClose={() => setCustomerOpen(false)} size="md">
+      <DrawerOverlay />
+      <DrawerContent>
+        <DrawerHeader borderBottomWidth="1px">
+          <HStack justify="space-between">
+            <VStack align="start" spacing={0}>
+              <Text fontWeight="semibold">{selectedCustomer?.name || 'Customer'}</Text>
+              {selectedCustomer && (
+                <Text fontSize="sm" color="gray.600">{selectedCustomer.reference}</Text>
+              )}
+            </VStack>
+            <Button onClick={() => setCustomerOpen(false)} variant="outline">Close</Button>
+          </HStack>
+        </DrawerHeader>
+        <DrawerBody>
+          <Stack spacing={6} py={2}>
+            {selectedCustomer && (
+              <Card>
+                <CardBody>
+                  <Stack spacing={1}>
+                    <Text fontSize="sm" color="gray.600">Customer</Text>
+                    <Text fontSize="lg" fontWeight="semibold">{selectedCustomer.name}</Text>
+                    <Text fontSize="sm" color="gray.600">Reference: {selectedCustomer.reference}</Text>
+                    <Text fontSize="sm" color="gray.600">Outstanding: {formatGBP(selectedCustomer.outstanding)}</Text>
+                  </Stack>
+                </CardBody>
+              </Card>
+            )}
+
+            <Card>
+              <CardBody>
+                <Stack spacing={3}>
+                  <Text fontWeight="semibold">Transactions ({customerTx.length})</Text>
+                  <TableContainer>
+                    <Table size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Document</Th>
+                          <Th isNumeric>Amount</Th>
+                          <Th isNumeric>Remaining</Th>
+                          <Th>Due</Th>
+                          <Th>Status</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {customerTx.map(tx => (
+                          <Tr key={tx.id}>
+                            <Td>{tx.document}</Td>
+                            <Td isNumeric>{formatGBP(tx.amount)}</Td>
+                            <Td isNumeric>{formatGBP(tx.remaining)}</Td>
+                            <Td>{new Date(tx.dueDate).toLocaleDateString('en-GB')}</Td>
+                            <Td>
+                              <Badge colorScheme={tx.status==='open'?'yellow':'green'} textTransform="capitalize">{tx.status}</Badge>
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </TableContainer>
+                </Stack>
+              </CardBody>
+            </Card>
+          </Stack>
+        </DrawerBody>
+      </DrawerContent>
+    </Drawer>
+    </>
+  )
+}

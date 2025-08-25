@@ -1,0 +1,203 @@
+export const companies = [
+  {
+    "id": "1",
+    "name": "Jimbo's Cars",
+    "email": "contact01@jimbos.com",
+    "reference": "7471716/019",
+    "lastLoadDate": "2025-06-29",
+    "salesBalanceGBP": 223416.02,
+    "purchaseBalanceGBP": 95185.5,
+    "status": "desktop"
+  },
+  {
+    "id": "2",
+    "name": "Acme Widgets",
+    "email": "contact02@acme.com",
+    "reference": "4031825/955",
+    "lastLoadDate": "2025-08-10",
+    "salesBalanceGBP": 163382.27,
+    "purchaseBalanceGBP": 22509.58,
+    "status": "cloud"
+  },
+  {
+    "id": "3",
+    "name": "Goode Wood Furniture",
+    "email": "contact03@goode.com",
+    "reference": "9491945/317",
+    "lastLoadDate": "2025-06-22",
+    "salesBalanceGBP": 235213.89,
+    "purchaseBalanceGBP": 4423.8,
+    "status": "cloud"
+  },
+  {
+    "id": "4",
+    "name": "Brighton Bikes",
+    "email": "contact04@brighton.com",
+    "reference": "9658553/557",
+    "lastLoadDate": "2025-08-12",
+    "salesBalanceGBP": 198319.34,
+    "purchaseBalanceGBP": 20230.47,
+    "status": "desktop"
+  },
+  {
+    "id": "5",
+    "name": "Worthing Digital",
+    "email": "contact05@worthing.com",
+    "reference": "2509703/630",
+    "lastLoadDate": "2025-06-27",
+    "salesBalanceGBP": 28110.88,
+    "purchaseBalanceGBP": 91503.72,
+    "status": "desktop"
+  },
+  {
+    "id": "6",
+    "name": "Lunar Logistics",
+    "email": "contact06@lunar.com",
+    "reference": "3581239/667",
+    "lastLoadDate": "2025-08-11",
+    "salesBalanceGBP": 76359.5,
+    "purchaseBalanceGBP": 73790.05,
+    "status": "cloud"
+  },
+  {
+    "id": "7",
+    "name": "Seaside Bakery",
+    "email": "contact07@seaside.com",
+    "reference": "6697612/997",
+    "lastLoadDate": "2025-08-25",
+    "salesBalanceGBP": 75112.89,
+    "purchaseBalanceGBP": 91928.35,
+    "status": "cloud"
+  },
+  {
+    "id": "8",
+    "name": "Birch & Co",
+    "email": "contact08@birch.com",
+    "reference": "5455775/979",
+    "lastLoadDate": "2025-08-05",
+    "salesBalanceGBP": 246875.51,
+    "purchaseBalanceGBP": 145901.09,
+    "status": "cloud"
+  },
+  {
+    "id": "9",
+    "name": "Broughtie Capital",
+    "email": "contact09@broughtie.com",
+    "reference": "3451271/581",
+    "lastLoadDate": "2025-08-10",
+    "salesBalanceGBP": 209482.45,
+    "purchaseBalanceGBP": 1715.75,
+    "status": "desktop"
+  },
+  {
+    "id": "10",
+    "name": "Aurora Media",
+    "email": "contact10@aurora.com",
+    "reference": "7546874/083",
+    "lastLoadDate": "2025-07-15",
+    "salesBalanceGBP": 131733.5,
+    "purchaseBalanceGBP": 69016.94,
+    "status": "cloud"
+  },
+  {
+    "id": "11",
+    "name": "Falcon Tools",
+    "email": "contact11@falcon.com",
+    "reference": "0336520/482",
+    "lastLoadDate": "2025-06-14",
+    "salesBalanceGBP": 90077.61,
+    "purchaseBalanceGBP": 134892.02,
+    "status": "cloud"
+  },
+  {
+    "id": "12",
+    "name": "Harbour Caf\u00e9",
+    "email": "contact12@harbour.com",
+    "reference": "5787012/738",
+    "lastLoadDate": "2025-06-23",
+    "salesBalanceGBP": 201138.5,
+    "purchaseBalanceGBP": 80224.08,
+    "status": "desktop"
+  },
+  {
+    "id": "13",
+    "name": "Maple Hardware",
+    "email": "contact13@maple.com",
+    "reference": "7128272/616",
+    "lastLoadDate": "2025-08-05",
+    "salesBalanceGBP": 139262.13,
+    "purchaseBalanceGBP": 43960.0,
+    "status": "cloud"
+  },
+  {
+    "id": "14",
+    "name": "Oxford Analytics",
+    "email": "contact14@oxford.com",
+    "reference": "4862270/369",
+    "lastLoadDate": "2025-08-24",
+    "salesBalanceGBP": 192945.91,
+    "purchaseBalanceGBP": 145341.58,
+    "status": "desktop"
+  },
+  {
+    "id": "15",
+    "name": "Riverbank Finance",
+    "email": "contact15@riverbank.com",
+    "reference": "2824914/392",
+    "lastLoadDate": "2025-08-08",
+    "salesBalanceGBP": 140635.54,
+    "purchaseBalanceGBP": 18296.81,
+    "status": "desktop"
+  },
+  {
+    "id": "16",
+    "name": "Green Leaf Foods",
+    "email": "contact16@green.com",
+    "reference": "1847728/331",
+    "lastLoadDate": "2025-07-24",
+    "salesBalanceGBP": 126195.97,
+    "purchaseBalanceGBP": 144768.8,
+    "status": "cloud"
+  },
+  {
+    "id": "17",
+    "name": "Nimbus Cloudware",
+    "email": "contact17@nimbus.com",
+    "reference": "6517664/631",
+    "lastLoadDate": "2025-07-12",
+    "salesBalanceGBP": 194803.93,
+    "purchaseBalanceGBP": 81291.34,
+    "status": "cloud"
+  },
+  {
+    "id": "18",
+    "name": "Kensington Books",
+    "email": "contact18@kensington.com",
+    "reference": "5201407/278",
+    "lastLoadDate": "2025-05-27",
+    "salesBalanceGBP": 20066.99,
+    "purchaseBalanceGBP": 94132.56,
+    "status": "cloud"
+  },
+  {
+    "id": "19",
+    "name": "Blue Horizon Travel",
+    "email": "contact19@blue.com",
+    "reference": "7595837/966",
+    "lastLoadDate": "2025-06-04",
+    "salesBalanceGBP": 221359.75,
+    "purchaseBalanceGBP": 122478.64,
+    "status": "cloud"
+  },
+  {
+    "id": "20",
+    "name": "Stellar Stores",
+    "email": "contact20@stellar.com",
+    "reference": "7104616/130",
+    "lastLoadDate": "2025-07-04",
+    "salesBalanceGBP": 149031.97,
+    "purchaseBalanceGBP": 124443.91,
+    "status": "cloud"
+  }
+] as const;
+export type Companies = typeof companies;
