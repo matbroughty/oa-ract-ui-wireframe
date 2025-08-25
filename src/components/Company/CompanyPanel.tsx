@@ -57,6 +57,14 @@ export type Retentions = {
   approved: number
 }
 
+export type Ageing = {
+  notDue: number
+  d30: number
+  d60: number
+  d90: number
+  over: number
+}
+
 export type Transaction = {
   id: string
   customerName: string
@@ -108,6 +116,38 @@ function BarChart({ data }: { data: Retentions }) {
               </Box>
             </Box>
             <Text w="60px" textAlign="right" fontWeight="semibold">{pct}%</Text>
+          </HStack>
+        )
+      })}
+    </VStack>
+  )
+}
+
+function AgeingBarChart({ ageing }: { ageing: Ageing }) {
+  const items = [
+    { key: 'notDue' as const, label: 'Not Due', value: ageing.notDue },
+    { key: 'd30' as const, label: '30 days', value: ageing.d30 },
+    { key: 'd60' as const, label: '60 days', value: ageing.d60 },
+    { key: 'd90' as const, label: '90 days', value: ageing.d90 },
+    { key: 'over' as const, label: 'Over', value: ageing.over },
+  ]
+  const max = Math.max(1, ...items.map(i => i.value))
+  function fmtGBP(n: number) {
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(n)
+  }
+  return (
+    <VStack align="stretch" spacing={2}>
+      {items.map(({ key, label, value }) => {
+        const pct = Math.max(1, Math.round((value / max) * 100))
+        return (
+          <HStack key={key} spacing={3}>
+            <Box w="120px" fontSize="sm" color="gray.600">{label}</Box>
+            <Box flex="1">
+              <Box bg="gray.200" h="6" borderRadius="md" overflow="hidden">
+                <Box bg="teal.500" h="100%" width={`${pct}%`} />
+              </Box>
+            </Box>
+            <Text w="120px" textAlign="right" fontWeight="semibold">{fmtGBP(value)}</Text>
           </HStack>
         )
       })}
@@ -183,6 +223,7 @@ export default function CompanyPanel({
   company,
   balances,
   retentions,
+  ageing,
   salesTransactions,
   purchaseTransactions,
   customers,
@@ -193,6 +234,7 @@ export default function CompanyPanel({
   company: CompanySummary
   balances: BalanceBreakdown
   retentions: Retentions
+  ageing: Ageing
   salesTransactions: Transaction[]
   purchaseTransactions: Transaction[]
   customers: Customer[]
@@ -479,6 +521,15 @@ export default function CompanyPanel({
                 </CardBody>
               </Card>
             </SimpleGrid>
+
+            <Card>
+              <CardBody>
+                <Stack spacing={3}>
+                  <Text fontSize="sm" color="gray.600">Ageing</Text>
+                  <AgeingBarChart ageing={ageing} />
+                </Stack>
+              </CardBody>
+            </Card>
 
             <Card>
               <CardBody>

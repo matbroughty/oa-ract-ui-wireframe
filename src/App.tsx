@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button } from '@chakra-ui/react'
-import { SettingsIcon, AtSignIcon, TimeIcon } from '@chakra-ui/icons'
+import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast } from '@chakra-ui/react'
+import { SettingsIcon, AtSignIcon, TimeIcon, InfoIcon } from '@chakra-ui/icons'
 import CompaniesTable from './pages/CompaniesTable'
 import StatCard from './components/Cards/StatCard'
 import { metrics } from './data/metrics'
@@ -21,7 +21,7 @@ export default function App() {
     return seedCompanies.filter(c => c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && daysSince(c.lastLoadDate) > 10).length
   })()
 
-  type Section = 'Companies' | 'System' | 'User' | 'Recent Activity'
+  type Section = 'Companies' | 'System' | 'User' | 'Recent Activity' | 'Survey'
   const [section, setSection] = useState<Section>('Companies')
   const [showMenu, setShowMenu] = useState(false)
 

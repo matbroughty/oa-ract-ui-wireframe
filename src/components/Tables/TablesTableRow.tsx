@@ -21,13 +21,14 @@ export default function TablesTableRow(props: CompanyRow & {
   connector?: 'native' | 'codat' | 'validis'
   loadStatus?: 'loaded' | 'requested' | 'queued' | 'no load'
   hoverTitle?: string
+  funding?: 'Not funded' | 'Company' | 'Pool'
   onEdit?: (id: string) => void
   onClear?: (id: string) => void
   onSelect?: (id: string) => void
   onRefresh?: (id: string) => void
   onSnapshot?: (id: string) => void
 }) {
-  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, connector, loadStatus, hoverTitle } = props
+  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, connector, loadStatus, hoverTitle, funding } = props
   const isCloud = status === 'cloud'
   const badgeColor = isCloud ? 'green' : 'gray'
   const connectorLabel = isCloud ? (connector === 'native' ? 'Native Cloud' : connector === 'codat' ? 'Codat' : connector === 'validis' ? 'Validis' : 'Cloud') : 'Desktop'
@@ -65,6 +66,9 @@ export default function TablesTableRow(props: CompanyRow & {
       </Td>
       <Td isNumeric>
         <Text>{formatGBP(purchaseBalanceGBP)}</Text>
+      </Td>
+      <Td>
+        <Badge colorScheme={funding === 'Pool' ? 'purple' : funding === 'Company' ? 'blue' : 'gray'} variant="subtle">{funding || 'Not funded'}</Badge>
       </Td>
       <Td>
         <Badge colorScheme={badgeColor} variant="subtle">{connectorLabel}</Badge>

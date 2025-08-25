@@ -123,6 +123,16 @@ export default function CompaniesTable() {
     return idx === 0 ? 'native' : idx === 1 ? 'codat' : 'validis'
   }
 
+  // Determine funding type for display (deterministic for demo)
+  function getFunding(row: CompanyRow): 'Not funded' | 'Company' | 'Pool' {
+    // Example rule: if both balances are zero => Not funded; otherwise alternate by id
+    if ((row.salesBalanceGBP || 0) === 0 && (row.purchaseBalanceGBP || 0) === 0) return 'Not funded'
+    const idx = Number(row.id) % 3
+    if (idx === 0) return 'Company'
+    if (idx === 1) return 'Pool'
+    return 'Not funded'
+  }
+
   // Compute load status for display
   function getLoadStatus(row: CompanyRow): 'loaded' | 'requested' | 'queued' | 'no load' {
     // If there is an override in the map (e.g., a refresh was requested), prefer it.
@@ -554,6 +564,7 @@ export default function CompaniesTable() {
                 <SortHeader label="Last Load Date" k="lastLoadDate" />
                 <SortHeader label="Sales Balance" k="salesBalanceGBP" />
                 <SortHeader label="Purchase Balance" k="purchaseBalanceGBP" />
+                <Th>FUNDING</Th>
                 <SortHeader label="CONNECTOR" k="status" />
                 <Th>Status</Th>
                 <Th>Actions</Th>
@@ -567,6 +578,7 @@ export default function CompaniesTable() {
                   connector={row.status === 'cloud' ? getConnector(row) : undefined}
                   loadStatus={getLoadStatus(row)}
                   hoverTitle={buildHoverTitle(row)}
+                  funding={getFunding(row)}
                   onEdit={(id) => {
                     const row = data.find(d => d.id === id)
                     if (!row) return
@@ -1061,6 +1073,7 @@ export default function CompaniesTable() {
         company={details.company}
         balances={details.balances}
         retentions={details.retentions}
+        ageing={details.ageing}
         salesTransactions={details.salesTransactions}
         purchaseTransactions={details.purchaseTransactions}
         customers={details.customers}

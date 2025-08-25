@@ -1,5 +1,5 @@
 import { companies } from './companies'
-import type { BalanceBreakdown, CompanySummary, Retentions, Transaction, Customer } from '../components/Company/CompanyPanel'
+import type { BalanceBreakdown, CompanySummary, Retentions, Transaction, Customer, Ageing } from '../components/Company/CompanyPanel'
 
 function pickCompany(id: string): CompanySummary | undefined {
   const c = companies.find(c => c.id === id)
@@ -153,15 +153,28 @@ function seedSuppliers(companyId: string, count = 6): Customer[] {
   return arr
 }
 
+function seedAgeing(total: number): Ageing {
+  // Create a standard ageing split: Not Due, 30, 60, 90, Over
+  // Use simple proportions that sum to total
+  const notDue = Math.max(0, Math.round(total * 0.35))
+  const d30 = Math.max(0, Math.round(total * 0.25))
+  const d60 = Math.max(0, Math.round(total * 0.18))
+  const d90 = Math.max(0, Math.round(total * 0.12))
+  let over = total - (notDue + d30 + d60 + d90)
+  if (over < 0) over = 0
+  return { notDue, d30, d60, d90, over }
+}
+
 export function getCompanyDetails(id: string) {
   const comp = companies.find(c => c.id === id)
   const company = pickCompany(id)
   if (!comp || !company) return undefined
   const balances = seedBalances(comp.salesBalanceGBP)
   const retentions = seedRetentions(Math.abs(Math.round(comp.salesBalanceGBP)))
+  const ageing = seedAgeing(Math.abs(Math.round(comp.salesBalanceGBP)))
   const salesTransactions = seedSalesTransactions(id)
   const purchaseTransactions = seedPurchaseTransactions(id)
   const customers = seedCustomers(id)
   const suppliers = seedSuppliers(id)
-  return { company, balances, retentions, salesTransactions, purchaseTransactions, customers, suppliers }
+  return { company, balances, retentions, ageing, salesTransactions, purchaseTransactions, customers, suppliers }
 }
