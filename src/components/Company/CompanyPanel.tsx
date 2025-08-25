@@ -29,6 +29,13 @@ import {
   InputGroup,
   InputLeftElement,
   Icon,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
 } from '@chakra-ui/react'
 import { TriangleDownIcon, TriangleUpIcon, SearchIcon, TimeIcon, DownloadIcon, CalendarIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 
@@ -228,6 +235,7 @@ export default function CompanyPanel({
   purchaseTransactions,
   customers,
   suppliers,
+  funding,
 }: {
   isOpen: boolean
   onClose: () => void
@@ -239,11 +247,13 @@ export default function CompanyPanel({
   purchaseTransactions: Transaction[]
   customers: Customer[]
   suppliers: Customer[]
+  funding?: 'Not funded' | 'Company' | 'Pool'
 }) {
   const [txFilter, setTxFilter] = useState<'open' | 'closed'>('open')
   const [customerOpen, setCustomerOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [customerTx, setCustomerTx] = useState<Transaction[]>([])
+  const [poolOpen, setPoolOpen] = useState(false)
 
   // Transactions sort state (Amount and Remaining)
   type TxSortKey = 'amount' | 'remaining'
@@ -468,11 +478,18 @@ export default function CompanyPanel({
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
               <Card>
                 <CardBody>
-                  <Stack spacing={1}>
+                  <Stack spacing={2}>
                     <Text fontSize="sm" color="gray.600">Company party</Text>
                     <Text fontSize="lg" fontWeight="semibold">{company.name}</Text>
                     <Text fontSize="sm" color="gray.600">{company.email}</Text>
                     <Text fontSize="sm" color="gray.600">Reference: {company.reference}</Text>
+                    <HStack>
+                      <Text fontSize="sm" color="gray.600">Funding:</Text>
+                      <Badge colorScheme={funding === 'Pool' ? 'purple' : funding === 'Company' ? 'blue' : 'gray'} variant="subtle">{funding || 'Not funded'}</Badge>
+                      {funding === 'Pool' && (
+                        <Button size="xs" colorScheme="purple" variant="outline" onClick={() => setPoolOpen(true)}>View Pool Level Data</Button>
+                      )}
+                    </HStack>
                   </Stack>
                 </CardBody>
               </Card>
@@ -766,6 +783,48 @@ export default function CompanyPanel({
         </DrawerBody>
       </DrawerContent>
     </Drawer>
+
+    {/* Pool Level Data modal */}
+    <Modal isOpen={poolOpen} onClose={() => setPoolOpen(false)} size="lg">
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Pool Level Data — {company.name}</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <Stack spacing={3}>
+            <Text color="gray.600">This company is funded at Pool level. Below is a placeholder view for pool-level totals and recent movements.</Text>
+            <TableContainer>
+              <Table size="sm">
+                <Thead>
+                  <Tr>
+                    <Th>Metric</Th>
+                    <Th isNumeric>Amount</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  <Tr>
+                    <Td>Pool Outstanding (Sales)</Td>
+                    <Td isNumeric>{formatGBP(balances.salesLedgerBalance * 1.15)}</Td>
+                  </Tr>
+                  <Tr>
+                    <Td>Pool Outstanding (Purchase)</Td>
+                    <Td isNumeric>{formatGBP(Math.max(0, balances.salesLedgerBalance * 0.55))}</Td>
+                  </Tr>
+                  <Tr>
+                    <Td>Approved Limit</Td>
+                    <Td isNumeric>{formatGBP(balances.salesLedgerBalance * 1.5)}</Td>
+                  </Tr>
+                </Tbody>
+              </Table>
+            </TableContainer>
+            <Text fontSize="sm" color="gray.500">Note: Replace with real pool hierarchy and figures when available.</Text>
+          </Stack>
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={() => setPoolOpen(false)}>Close</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
 
     {/* Customer panel */}
     <Drawer isOpen={customerOpen} placement="right" onClose={() => setCustomerOpen(false)} size="md">

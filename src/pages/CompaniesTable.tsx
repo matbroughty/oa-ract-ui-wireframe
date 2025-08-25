@@ -1078,6 +1078,7 @@ export default function CompaniesTable() {
         purchaseTransactions={details.purchaseTransactions}
         customers={details.customers}
         suppliers={details.suppliers}
+        funding={(data.find(d => d.id === selectedId) ? getFunding(data.find(d => d.id === selectedId) as CompanyRow) : undefined)}
       />
     )}
     </>
