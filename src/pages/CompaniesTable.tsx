@@ -9,7 +9,7 @@ import { getCompanyDetails } from '../data/companyDetails'
 import CreateCompanyDialog, { CreateCompanyPayload } from '../components/Company/CreateCompanyDialog'
 import EditCompanyDialog, { CompanyConfig } from '../components/Company/EditCompanyDialog'
 
-type SortKey = keyof Pick<CompanyRow,'name'|'reference'|'lastLoadDate'|'salesBalanceGBP'|'purchaseBalanceGBP'|'status'>
+type SortKey = keyof Pick<CompanyRow,'name'|'reference'|'lastLoadDate'|'salesBalanceGBP'|'notifiedSalesBalanceGBP'|'purchaseBalanceGBP'|'status'>
 
 function sortData(data: CompanyRow[], sortKey: SortKey, direction: 'asc' | 'desc') {
   const sorted = [...data].sort((a, b) => {
@@ -30,9 +30,14 @@ function sortData(data: CompanyRow[], sortKey: SortKey, direction: 'asc' | 'desc
 
 export default function CompaniesTable() {
   const toast = useToast()
-  const [data, setData] = useState<CompanyRow[]>(seedCompanies as unknown as CompanyRow[])
-  const [sortKey, setSortKey] = useState<SortKey>('name')
-  const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc')
+  const [data, setData] = useState<CompanyRow[]>(
+    (seedCompanies as unknown as any[]).map(company => ({
+      ...company,
+      notifiedSalesBalanceGBP: Math.round((company.salesBalanceGBP * 0.95) * 100) / 100
+    }))
+  )
+  const [sortKey, setSortKey] = useState<SortKey>('lastLoadDate')
+  const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc')
   const [localSearch, setLocalSearch] = useState('')
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -131,6 +136,20 @@ export default function CompaniesTable() {
     if (idx === 0) return 'Company'
     if (idx === 1) return 'Pool'
     return 'Not funded'
+  }
+
+  // Determine if there has been a balance change during the last load
+  function hasBalanceChanged(row: CompanyRow): boolean {
+    // If both balances are zero, there's no change
+    if ((row.salesBalanceGBP || 0) === 0 && (row.purchaseBalanceGBP || 0) === 0) return false
+
+    // For demo purposes, we'll use the logic from buildHoverTitle
+    // where previous balances are calculated as 5% less than current
+    const prevSales = Math.max(0, Math.round(row.salesBalanceGBP * 0.95 * 100) / 100)
+    const prevPurchase = Math.max(0, Math.round(row.purchaseBalanceGBP * 0.95 * 100) / 100)
+
+    // If current balances are different from previous balances, there's a change
+    return prevSales !== row.salesBalanceGBP || prevPurchase !== row.purchaseBalanceGBP
   }
 
   // Compute load status for display
@@ -242,7 +261,7 @@ export default function CompaniesTable() {
       setData(prev => prev.filter(p => p.id !== clearTarget.id))
     } else {
       const snap = selectedSnapshot || clearTarget.lastLoadDate
-      setData(prev => prev.map(r => r.id === clearTarget.id ? { ...r, lastLoadDate: snap, salesBalanceGBP: 0, purchaseBalanceGBP: 0 } : r))
+      setData(prev => prev.map(r => r.id === clearTarget.id ? { ...r, lastLoadDate: snap, salesBalanceGBP: 0, notifiedSalesBalanceGBP: 0, purchaseBalanceGBP: 0 } : r))
     }
     setClearTarget(null)
   }
@@ -510,6 +529,7 @@ export default function CompaniesTable() {
       reference: payload.reference,
       lastLoadDate: todayISO,
       salesBalanceGBP: 0,
+      notifiedSalesBalanceGBP: 0,
       purchaseBalanceGBP: 0,
       status: 'cloud',
     }
@@ -563,10 +583,12 @@ export default function CompaniesTable() {
                 <SortHeader label="Reference" k="reference" />
                 <SortHeader label="Last Load Date" k="lastLoadDate" />
                 <SortHeader label="Sales Balance" k="salesBalanceGBP" />
+                <SortHeader label="Notified Sales Balance" k="notifiedSalesBalanceGBP" />
                 <SortHeader label="Purchase Balance" k="purchaseBalanceGBP" />
                 <Th>FUNDING</Th>
                 <SortHeader label="CONNECTOR" k="status" />
                 <Th>Status</Th>
+                <Th>CHANGE</Th>
                 <Th>Actions</Th>
               </Tr>
             </Thead>
@@ -579,6 +601,7 @@ export default function CompaniesTable() {
                   loadStatus={getLoadStatus(row)}
                   hoverTitle={buildHoverTitle(row)}
                   funding={getFunding(row)}
+                  hasBalanceChanged={hasBalanceChanged(row)}
                   onEdit={(id) => {
                     const row = data.find(d => d.id === id)
                     if (!row) return

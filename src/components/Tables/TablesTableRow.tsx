@@ -9,6 +9,7 @@ export type CompanyRow = {
   reference: string
   lastLoadDate: string // ISO date
   salesBalanceGBP: number
+  notifiedSalesBalanceGBP: number
   purchaseBalanceGBP: number
   status: 'cloud' | 'desktop'
 }
@@ -22,13 +23,14 @@ export default function TablesTableRow(props: CompanyRow & {
   loadStatus?: 'loaded' | 'requested' | 'queued' | 'no load'
   hoverTitle?: string
   funding?: 'Not funded' | 'Company' | 'Pool'
+  hasBalanceChanged?: boolean
   onEdit?: (id: string) => void
   onClear?: (id: string) => void
   onSelect?: (id: string) => void
   onRefresh?: (id: string) => void
   onSnapshot?: (id: string) => void
 }) {
-  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, connector, loadStatus, hoverTitle, funding } = props
+  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, notifiedSalesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, connector, loadStatus, hoverTitle, funding, hasBalanceChanged } = props
   const isCloud = status === 'cloud'
   const badgeColor = isCloud ? 'green' : 'gray'
   const connectorLabel = isCloud ? (connector === 'native' ? 'Native Cloud' : connector === 'codat' ? 'Codat' : connector === 'validis' ? 'Validis' : 'Cloud') : 'Desktop'
@@ -65,6 +67,9 @@ export default function TablesTableRow(props: CompanyRow & {
         <Text>{formatGBP(salesBalanceGBP)}</Text>
       </Td>
       <Td isNumeric>
+        <Text>{formatGBP(notifiedSalesBalanceGBP)}</Text>
+      </Td>
+      <Td isNumeric>
         <Text>{formatGBP(purchaseBalanceGBP)}</Text>
       </Td>
       <Td>
@@ -75,6 +80,13 @@ export default function TablesTableRow(props: CompanyRow & {
       </Td>
       <Td>
         <Badge colorScheme={statusColor(loadStatus)} variant="subtle">{loadStatus || 'no load'}</Badge>
+      </Td>
+      <Td textAlign="center">
+        {hasBalanceChanged ? (
+          <Text color="green.500" fontSize="xl">✓</Text>
+        ) : (
+          <Text color="gray.500">-</Text>
+        )}
       </Td>
       <Td>
         <HStack>

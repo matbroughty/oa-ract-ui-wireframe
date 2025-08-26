@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   Badge,
   Box,
@@ -96,6 +96,16 @@ export type Customer = {
   notified?: boolean
   debtorPoolRef?: string
   enrichment?: Record<string, string>
+  website?: string
+  contact?: string
+  createdDate?: string // ISO
+  changedDate?: string // ISO
+  changeDetails?: Record<string, string> // field name -> new value
+  limits?: {
+    funding?: { currency: string, amount: number }
+    concentration?: number // percentage
+    dilution?: number // percentage
+  }
 }
 
 function formatGBP(value: number) {
@@ -269,6 +279,35 @@ export default function CompanyPanel({
   const [custSortDir, setCustSortDir] = useState<'asc' | 'desc'>('asc')
   // Keep a local copy of customers so we can toggle notified and apply enrichment
   const [custRows, setCustRows] = useState<Customer[]>(customers)
+
+  // Add mock data for the new fields to test the UI
+  useEffect(() => {
+    if (customers.length > 0) {
+      setCustRows(prev => prev.map((c, index) => {
+        // Only add mock data to the first few customers
+        if (index < 5) {
+          return {
+            ...c,
+            address: c.address || `${index + 1} Business Street\nCity, Country\nPostcode`,
+            website: `https://example${index}.com`,
+            contact: `Contact Person ${index + 1}\nEmail: contact${index + 1}@example.com\nPhone: +44 123 456 ${index + 1000}`,
+            createdDate: new Date(Date.now() - (Math.random() * 365 * 24 * 60 * 60 * 1000)).toISOString(),
+            changedDate: index % 2 === 0 ? new Date(Date.now() - (Math.random() * 30 * 24 * 60 * 60 * 1000)).toISOString() : undefined,
+            changeDetails: index % 2 === 0 ? {
+              'Address Line 1': 'Changed from "Old Street" to "Business Street"',
+              'Contact': 'Updated phone number'
+            } : undefined,
+            limits: {
+              funding: { currency: 'GBP', amount: 10000 * (index + 1) },
+              concentration: 10 + index * 2,
+              dilution: 5 + index
+            }
+          }
+        }
+        return c
+      }))
+    }
+  }, [customers])
 
   // Suppliers table filter/sort state
   const [supSearch, setSupSearch] = useState('')
@@ -652,7 +691,7 @@ export default function CompanyPanel({
                       <Text fontSize="sm" color="gray.600">Top Customers</Text>
                       <Badge colorScheme="purple">Top 10</Badge>
                     </HStack>
-                    <TopCustomersChart customers={customers} onSelect={openCustomer} />
+                    <TopCustomersChart customers={custRows} onSelect={openCustomer} />
                   </Stack>
                 </CardBody>
               </Card>
@@ -999,11 +1038,123 @@ export default function CompanyPanel({
             {selectedCustomer && (
               <Card>
                 <CardBody>
-                  <Stack spacing={1}>
-                    <Text fontSize="sm" color="gray.600">{selectedPartyType === 'supplier' ? 'Supplier' : 'Customer'}</Text>
-                    <Text fontSize="lg" fontWeight="semibold">{selectedCustomer.name}</Text>
-                    <Text fontSize="sm" color="gray.600">Reference: {selectedCustomer.reference}</Text>
-                    <Text fontSize="sm" color="gray.600">Outstanding: {formatGBP(selectedCustomer.outstanding)}</Text>
+                  <Stack spacing={4}>
+                    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={6}>
+                      {/* Left column - Basic info */}
+                      <GridItem>
+                        <Stack spacing={3}>
+                          <Text fontSize="sm" color="gray.600">{selectedPartyType === 'supplier' ? 'Supplier' : 'Customer'}</Text>
+                          <Text fontSize="lg" fontWeight="semibold">{selectedCustomer.name}</Text>
+                          <HStack>
+                            <Badge colorScheme={selectedCustomer.notified ? 'green' : 'gray'}>
+                              {selectedCustomer.notified ? 'Notified' : 'Non-notified'}
+                            </Badge>
+                          </HStack>
+                          <Text fontSize="sm" color="gray.600">Reference: {selectedCustomer.reference}</Text>
+                          <Text fontSize="sm" color="gray.600">Outstanding: {formatGBP(selectedCustomer.outstanding)}</Text>
+
+                          {selectedCustomer.address && (
+                            <Box>
+                              <Text fontSize="sm" fontWeight="semibold" mb={1}>Address</Text>
+                              <Text fontSize="sm" color="gray.600" whiteSpace="pre-line">{selectedCustomer.address}</Text>
+                            </Box>
+                          )}
+
+                          {selectedCustomer.website && (
+                            <Box>
+                              <Text fontSize="sm" fontWeight="semibold" mb={1}>Website</Text>
+                              <Text fontSize="sm" color="blue.500" as="a" href={selectedCustomer.website} target="_blank" textDecoration="underline">
+                                {selectedCustomer.website}
+                              </Text>
+                            </Box>
+                          )}
+
+                          {selectedCustomer.contact && (
+                            <Box>
+                              <Text fontSize="sm" fontWeight="semibold" mb={1}>Contact</Text>
+                              <Text fontSize="sm" color="gray.600">{selectedCustomer.contact}</Text>
+                            </Box>
+                          )}
+                        </Stack>
+                      </GridItem>
+
+                      {/* Right column - Dates and Limits */}
+                      <GridItem>
+                        <Stack spacing={4}>
+                          <Box>
+                            <Text fontSize="sm" fontWeight="semibold" mb={1}>Dates</Text>
+                            <Grid templateColumns="auto 1fr" gap={2}>
+                              {selectedCustomer.createdDate && (
+                                <>
+                                  <Text fontSize="sm" color="gray.600">Created:</Text>
+                                  <Text fontSize="sm">{new Date(selectedCustomer.createdDate).toLocaleString('en-GB')}</Text>
+                                </>
+                              )}
+
+                              {selectedCustomer.changedDate && (
+                                <>
+                                  <Text fontSize="sm" color="gray.600">Last Changed:</Text>
+                                  <HStack>
+                                    <Text fontSize="sm">{new Date(selectedCustomer.changedDate).toLocaleString('en-GB')}</Text>
+                                    {selectedCustomer.changeDetails && Object.keys(selectedCustomer.changeDetails).length > 0 && (
+                                      <Button 
+                                        size="xs" 
+                                        colorScheme="blue" 
+                                        variant="outline"
+                                        onClick={() => {
+                                          // You would implement a modal or drawer to show change details here
+                                          alert(
+                                            "Changes:\n" + 
+                                            Object.entries(selectedCustomer.changeDetails || {})
+                                              .map(([field, value]) => `${field}: ${value}`)
+                                              .join("\n")
+                                          )
+                                        }}
+                                      >
+                                        View Changes
+                                      </Button>
+                                    )}
+                                  </HStack>
+                                </>
+                              )}
+                            </Grid>
+                          </Box>
+
+                          {selectedCustomer.limits && (
+                            <Box>
+                              <Text fontSize="sm" fontWeight="semibold" mb={1}>Limits</Text>
+                              <Grid templateColumns="auto 1fr" gap={2}>
+                                {selectedCustomer.limits.funding && (
+                                  <>
+                                    <Text fontSize="sm" color="gray.600">Funding Limit:</Text>
+                                    <Text fontSize="sm">
+                                      {new Intl.NumberFormat('en-GB', { 
+                                        style: 'currency', 
+                                        currency: selectedCustomer.limits.funding.currency 
+                                      }).format(selectedCustomer.limits.funding.amount)}
+                                    </Text>
+                                  </>
+                                )}
+
+                                {selectedCustomer.limits.concentration !== undefined && (
+                                  <>
+                                    <Text fontSize="sm" color="gray.600">Concentration Limit:</Text>
+                                    <Text fontSize="sm">{selectedCustomer.limits.concentration}%</Text>
+                                  </>
+                                )}
+
+                                {selectedCustomer.limits.dilution !== undefined && (
+                                  <>
+                                    <Text fontSize="sm" color="gray.600">Dilution Limit:</Text>
+                                    <Text fontSize="sm">{selectedCustomer.limits.dilution}%</Text>
+                                  </>
+                                )}
+                              </Grid>
+                            </Box>
+                          )}
+                        </Stack>
+                      </GridItem>
+                    </Grid>
                   </Stack>
                 </CardBody>
               </Card>
