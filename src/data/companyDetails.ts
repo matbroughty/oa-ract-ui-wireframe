@@ -142,7 +142,39 @@ function seedCustomers(companyId: string, count = 8): Customer[] {
 
 function seedSuppliers(companyId: string, count = 6): Customer[] {
   const arr: Customer[] = []
-  for (let i = 0; i < count; i++) {
+
+  // Add some suppliers with names similar to customers for contra matching
+  const contraMatchSuppliers = [
+    {
+      name: "Customer 1 Ltd",
+      address: "10 High Street, Townsville",
+    },
+    {
+      name: "Customer 2 Trading",
+      address: "11 High Street, Townsville",
+    },
+    {
+      name: "Customer 3 Services",
+      address: "12 High Street, Townsville",
+    }
+  ];
+
+  // Add the contra match suppliers first
+  for (let i = 0; i < contraMatchSuppliers.length; i++) {
+    const outstanding = Math.round((Math.random() * 15000) * 100) / 100
+    const notified = i % 2 === 1
+    arr.push({
+      id: `${companyId}-sup-${i+1}`,
+      name: contraMatchSuppliers[i].name,
+      reference: `SUP-${companyId}-${200 + i}`,
+      outstanding,
+      address: contraMatchSuppliers[i].address,
+      notified,
+    })
+  }
+
+  // Then add the regular suppliers
+  for (let i = contraMatchSuppliers.length; i < count; i++) {
     const outstanding = Math.round((Math.random() * 15000) * 100) / 100
     const notified = i % 2 === 1
     arr.push({
@@ -154,6 +186,7 @@ function seedSuppliers(companyId: string, count = 6): Customer[] {
       notified,
     })
   }
+
   return arr
 }
 

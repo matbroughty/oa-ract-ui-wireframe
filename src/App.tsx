@@ -73,13 +73,21 @@ export default function App() {
     return (
       <Button
         variant={active ? 'solid' : 'ghost'}
-        colorScheme={active ? 'blue' : undefined}
+        colorScheme={active ? 'brand' : undefined}
         justifyContent="flex-start"
-        leftIcon={<Icon as={icon} />}
+        leftIcon={<Icon as={icon} boxSize={5} />}
         w="full"
-        size="sm"
+        size="md"
         onClick={onClick}
-        borderRadius="md"
+        borderRadius="lg"
+        py={6}
+        fontWeight={active ? 'bold' : 'medium'}
+        transition="all 0.2s"
+        _hover={{
+          transform: 'translateX(4px)',
+          bg: active ? undefined : 'gray.50'
+        }}
+        boxShadow={active ? 'md' : 'none'}
       >
         {label}
       </Button>
@@ -336,37 +344,91 @@ export default function App() {
       <Container maxW={(section === 'Companies' && !showMenu) ? '100%' : '7xl'} py={8} px={(section === 'Companies' && !showMenu) ? 0 : undefined}>
         {section === 'Companies' && !showMenu ? (
           <Box px={{ base: 3, md: 4 }}>
-            <Flex align="center" mb={6} gap={4}>
-              <Image src={logoImage} alt="Open Accounting Logo" height="40px" mr={3} />
-              <Heading size="lg">Open Accounting — {section}</Heading>
+            <Flex 
+              align="center" 
+              mb={8} 
+              gap={4} 
+              bg="white" 
+              p={4} 
+              borderRadius="xl" 
+              boxShadow="md"
+              borderWidth="1px"
+              borderColor="gray.100"
+            >
+              <Image src={logoImage} alt="Open Accounting Logo" height="50px" mr={4} />
+              <Heading size="lg" color="brand.700">
+                Open Accounting — {section}
+              </Heading>
               <Spacer />
               <Menu>
-                <MenuButton as={Button} rightIcon={<ChevronDownIcon />} size="sm" mr={2}>
+                <MenuButton 
+                  as={Button} 
+                  rightIcon={<ChevronDownIcon />} 
+                  size="md" 
+                  mr={3}
+                  colorScheme="brand"
+                  variant="outline"
+                  _hover={{ transform: 'translateY(-2px)', boxShadow: 'sm' }}
+                  transition="all 0.2s"
+                >
                   {currentUser}
                 </MenuButton>
-                <MenuList>
-                  <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                <MenuList borderRadius="md" boxShadow="lg">
+                  <MenuItem onClick={handleLogout} _hover={{ bg: 'red.50', color: 'red.500' }}>Logout</MenuItem>
                 </MenuList>
               </Menu>
-              <Button size="sm" variant="outline" onClick={() => setShowMenu(s => !s)}>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => setShowMenu(s => !s)}
+                colorScheme="gray"
+                _hover={{ bg: 'gray.100' }}
+              >
                 {showMenu ? 'Hide menu' : 'Show menu'}
               </Button>
             </Flex>
           </Box>
         ) : (
-          <Flex align="center" mb={6} gap={4}>
-            <Image src={logoImage} alt="Open Accounting Logo" height="40px" mr={3} />
-            <Heading size="lg">Open Accounting — {section}</Heading>
+          <Flex 
+            align="center" 
+            mb={8} 
+            gap={4} 
+            bg="white" 
+            p={4} 
+            borderRadius="xl" 
+            boxShadow="md"
+            borderWidth="1px"
+            borderColor="gray.100"
+          >
+            <Image src={logoImage} alt="Open Accounting Logo" height="50px" mr={4} />
+            <Heading size="lg" color="brand.700">
+              Open Accounting — {section}
+            </Heading>
             <Spacer />
             <Menu>
-              <MenuButton as={Button} rightIcon={<ChevronDownIcon />} size="sm" mr={2}>
+              <MenuButton 
+                as={Button} 
+                rightIcon={<ChevronDownIcon />} 
+                size="md" 
+                mr={3}
+                colorScheme="brand"
+                variant="outline"
+                _hover={{ transform: 'translateY(-2px)', boxShadow: 'sm' }}
+                transition="all 0.2s"
+              >
                 {currentUser}
               </MenuButton>
-              <MenuList>
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              <MenuList borderRadius="md" boxShadow="lg">
+                <MenuItem onClick={handleLogout} _hover={{ bg: 'red.50', color: 'red.500' }}>Logout</MenuItem>
               </MenuList>
             </Menu>
-            <Button size="sm" variant="outline" onClick={() => setShowMenu(s => !s)}>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={() => setShowMenu(s => !s)}
+              colorScheme="gray"
+              _hover={{ bg: 'gray.100' }}
+            >
               {showMenu ? 'Hide menu' : 'Show menu'}
             </Button>
           </Flex>
@@ -376,10 +438,17 @@ export default function App() {
           {/* Left menu */}
           {showMenu && (
             <GridItem>
-              <Card>
-                <CardBody>
-                  <VStack align="stretch" spacing={2}>
-                    <Text fontSize="sm" color="gray.600" mb={1}>Menu</Text>
+              <Card
+                bg="white"
+                boxShadow="lg"
+                borderRadius="xl"
+                overflow="hidden"
+                borderWidth="1px"
+                borderColor="gray.100"
+              >
+                <CardBody p={4}>
+                  <VStack align="stretch" spacing={3}>
+                    <Text fontSize="sm" fontWeight="bold" color="brand.600" mb={2} textTransform="uppercase" letterSpacing="wider">Menu</Text>
                     <NavItem label="Companies" icon={ViewIcon} active={section==='Companies'} onClick={() => setSection('Companies')} />
                     <NavItem label="System" icon={SettingsIcon} active={section==='System'} onClick={() => setSection('System')} />
                     <NavItem label="User" icon={AtSignIcon} active={section==='User'} onClick={() => setSection('User')} />
