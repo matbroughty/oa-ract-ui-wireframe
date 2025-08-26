@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
+import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast, Menu, MenuButton, MenuList, MenuItem, Image } from '@chakra-ui/react'
+import logoImage from './oa-rev.png'
 import { SettingsIcon, AtSignIcon, TimeIcon, InfoIcon, ViewIcon, ChevronDownIcon } from '@chakra-ui/icons'
 import LoginView from './components/Auth/LoginView'
 import CompaniesTable from './pages/CompaniesTable'
@@ -336,6 +337,7 @@ export default function App() {
         {section === 'Companies' && !showMenu ? (
           <Box px={{ base: 3, md: 4 }}>
             <Flex align="center" mb={6} gap={4}>
+              <Image src={logoImage} alt="Open Accounting Logo" height="40px" mr={3} />
               <Heading size="lg">Open Accounting — {section}</Heading>
               <Spacer />
               <Menu>
@@ -353,6 +355,7 @@ export default function App() {
           </Box>
         ) : (
           <Flex align="center" mb={6} gap={4}>
+            <Image src={logoImage} alt="Open Accounting Logo" height="40px" mr={3} />
             <Heading size="lg">Open Accounting — {section}</Heading>
             <Spacer />
             <Menu>
