@@ -1,5 +1,5 @@
 
-import { Card, CardBody, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Icon, Input, InputGroup, InputLeftElement, HStack, Box, Text, Flex, useDisclosure, Button, Link, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, useClipboard, Stack, Checkbox, Select, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, Badge, Divider, useToast } from '@chakra-ui/react'
+import { Card, CardBody, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Icon, Input, InputGroup, InputLeftElement, HStack, Box, Text, Flex, useDisclosure, Button, Link, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, useClipboard, Stack, Checkbox, Select, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, Badge, Divider, useToast, Tooltip } from '@chakra-ui/react'
 import { TriangleDownIcon, TriangleUpIcon, SearchIcon, AddIcon } from '@chakra-ui/icons'
 import { useMemo, useState } from 'react'
 import TablesTableRow, { CompanyRow } from '../components/Tables/TablesTableRow'
@@ -140,6 +140,9 @@ export default function CompaniesTable() {
 
   // Determine if there has been a balance change during the last load
   function hasBalanceChanged(row: CompanyRow): boolean {
+    // Make specific companies not show balance changes (IDs 3, 7, and 12)
+    if (['3', '7', '12'].includes(row.id)) return false
+
     // If both balances are zero, there's no change
     if ((row.salesBalanceGBP || 0) === 0 && (row.purchaseBalanceGBP || 0) === 0) return false
 
@@ -585,10 +588,16 @@ export default function CompaniesTable() {
                 <SortHeader label="Sales Balance" k="salesBalanceGBP" />
                 <SortHeader label="Notified Sales Balance" k="notifiedSalesBalanceGBP" />
                 <SortHeader label="Purchase Balance" k="purchaseBalanceGBP" />
-                <Th>FUNDING</Th>
+                <Tooltip label="How is the Company funded (export behaviour)">
+                  <Th>FUNDING</Th>
+                </Tooltip>
                 <SortHeader label="CONNECTOR" k="status" />
-                <Th>Status</Th>
-                <Th>CHANGE</Th>
+                <Tooltip label="Status of data load">
+                  <Th>Status</Th>
+                </Tooltip>
+                <Tooltip label="Indicates if there was a sales or purchase balance change in last load">
+                  <Th>CHANGE</Th>
+                </Tooltip>
                 <Th>Actions</Th>
               </Tr>
             </Thead>
