@@ -41,6 +41,8 @@ import {
   ModalCloseButton,
 } from '@chakra-ui/react'
 import { TriangleDownIcon, TriangleUpIcon, SearchIcon, TimeIcon, DownloadIcon, CalendarIcon, ExternalLinkIcon } from '@chakra-ui/icons'
+import { Registration, getCompanyRegistrations } from '../../data/registrations'
+import RegistrationsModal from './RegistrationsModal'
 
 export type CompanySummary = {
   id: string
@@ -321,6 +323,13 @@ export default function CompanyPanel({
   type SupSortKey = 'name' | 'reference' | 'outstanding'
   const [supSortKey, setSupSortKey] = useState<SupSortKey>('name')
   const [supSortDir, setSupSortDir] = useState<'asc' | 'desc'>('asc')
+  // Keep a local copy of suppliers so we can update them
+  const [suppliersState, setSuppliers] = useState<Customer[]>(suppliers)
+
+  // Update suppliersState when suppliers prop changes
+  useEffect(() => {
+    setSuppliers(suppliers);
+  }, [suppliers])
 
   // Selected party type for drill-in
   const [selectedPartyType, setSelectedPartyType] = useState<'customer' | 'supplier'>('customer')
@@ -330,6 +339,18 @@ export default function CompanyPanel({
   const [selectedCustomerForExport, setSelectedCustomerForExport] = useState<Customer | null>(null)
   const [isExport, setIsExport] = useState(false)
   const [exportDelayDays, setExportDelayDays] = useState(0)
+
+  // Registrations modal state
+  const [registrationsModalOpen, setRegistrationsModalOpen] = useState(false)
+  const [companyRegistrations, setCompanyRegistrations] = useState<Registration[]>([])
+
+  // Load registrations when the modal is opened
+  useEffect(() => {
+    if (registrationsModalOpen && company) {
+      const registrations = getCompanyRegistrations(company.id)
+      setCompanyRegistrations(registrations)
+    }
+  }, [registrationsModalOpen, company])
 
   // Contra modal state
   const [contraModalOpen, setContraModalOpen] = useState(false)
@@ -442,11 +463,14 @@ export default function CompanyPanel({
   function handleContraSubmit() {
     if (selectedSupplierForContra && selectedCustomerForContra) {
       // Update the supplier in the suppliers list
-      const updatedSuppliers = suppliers.map(s => 
+      const updatedSuppliers = suppliersState.map(s => 
         s.id === selectedSupplierForContra.id 
           ? { ...s, contraLinked: true, contraLinkedId: selectedCustomerForContra.id } 
           : s
       );
+
+      // Actually update the suppliers state
+      setSuppliers(updatedSuppliers);
 
       // Update the customer in the customers list
       setCustRows(prev => prev.map(c => 
@@ -495,12 +519,12 @@ export default function CompanyPanel({
 
   const filteredSuppliers = useMemo(() => {
     const term = supSearch.trim().toLowerCase()
-    if (!term) return suppliers
-    return suppliers.filter(s =>
+    if (!term) return suppliersState
+    return suppliersState.filter(s =>
       s.name.toLowerCase().includes(term) ||
       s.reference.toLowerCase().includes(term)
     )
-  }, [suppliers, supSearch])
+  }, [suppliersState, supSearch])
 
   const sortedSuppliers = useMemo(() => {
     const arr = [...filteredSuppliers]
@@ -749,6 +773,19 @@ export default function CompanyPanel({
                         <Button size="xs" colorScheme="purple" variant="outline" onClick={() => setPoolOpen(true)}>View Pool Level Data</Button>
                       )}
                     </HStack>
+                    <Button 
+                      size="xs" 
+                      colorScheme="blue" 
+                      variant="outline" 
+                      onClick={() => setRegistrationsModalOpen(true)}
+                      mt={2}
+                      py={0}
+                      px={2}
+                      fontSize="xs"
+                      height="20px"
+                    >
+                      Registrations
+                    </Button>
                   </Stack>
                 </CardBody>
               </Card>
@@ -1569,6 +1606,16 @@ export default function CompanyPanel({
         </ModalFooter>
       </ModalContent>
     </Modal>
+    {/* Registrations modal */}
+    <RegistrationsModal
+      isOpen={registrationsModalOpen}
+      onClose={() => setRegistrationsModalOpen(false)}
+      companyId={company.id}
+      registrations={companyRegistrations}
+      onRegistrationCreated={(newRegistration) => {
+        setCompanyRegistrations(prev => [newRegistration, ...prev]);
+      }}
+    />
     </>
   )
 }
