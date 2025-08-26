@@ -1,12 +1,14 @@
-import { useState } from 'react'
-import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast } from '@chakra-ui/react'
-import { SettingsIcon, AtSignIcon, TimeIcon, InfoIcon, ViewIcon } from '@chakra-ui/icons'
+import { useState, useEffect } from 'react'
+import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast, Menu, MenuButton, MenuList, MenuItem } from '@chakra-ui/react'
+import { SettingsIcon, AtSignIcon, TimeIcon, InfoIcon, ViewIcon, ChevronDownIcon } from '@chakra-ui/icons'
+import LoginView from './components/Auth/LoginView'
 import CompaniesTable from './pages/CompaniesTable'
 import StatCard from './components/Cards/StatCard'
 import { metrics } from './data/metrics'
 import { activities } from './data/activities'
 import ActivityItem from './components/Activity/ActivityItem'
 import { companies as seedCompanies } from './data/companies'
+import ExtractFilesView from './components/System/ExtractFilesView'
 
 // Normalize type for companies array to avoid TS inference issues with `as const` in some environments
 export type CompanySeed = {
@@ -22,6 +24,30 @@ export type CompanySeed = {
 const companiesArr = seedCompanies as unknown as CompanySeed[]
 
 export default function App() {
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+  const [currentUser, setCurrentUser] = useState<string>('')
+  const toast = useToast()
+
+  // Handle successful login
+  const handleLogin = (username: string) => {
+    setIsAuthenticated(true)
+    setCurrentUser(username)
+  }
+
+  // Handle logout
+  const handleLogout = () => {
+    setIsAuthenticated(false)
+    setCurrentUser('')
+    toast({
+      title: 'Logged out',
+      description: 'You have been successfully logged out.',
+      status: 'info',
+      duration: 3000,
+      isClosable: true
+    })
+  }
+
   // Compute queued companies count (demo rule): cloud companies with non-zero balances and last load > 10 days ago
   const queuedCount = (() => {
     const today = new Date()
@@ -35,6 +61,8 @@ export default function App() {
   })()
 
   type Section = 'Companies' | 'System' | 'User' | 'Recent Activity' | 'Survey'
+  type SystemSubSection = 'Main' | 'ExtractFiles'
+  const [systemSubSection, setSystemSubSection] = useState<SystemSubSection>('Main')
   const [section, setSection] = useState<Section>('Companies')
   const [showMenu, setShowMenu] = useState(false)
 
@@ -82,7 +110,17 @@ export default function App() {
               </GridItem>
             ))}
             <GridItem>
-              <StatCard label="Queued Companies" value={String(queuedCount)} helperText="awaiting load" subText={lastQueuedLoadSubText} />
+              <StatCard 
+                label="Queued Companies" 
+                value={String(queuedCount)} 
+                helperText="awaiting load" 
+                subText={lastQueuedLoadSubText} 
+                onClick={() => { 
+                  setSection('System'); 
+                  setSystemSubSection('ExtractFiles'); 
+                  setShowMenu(true); 
+                }} 
+              />
             </GridItem>
           </Grid>
         </Box>
@@ -95,6 +133,10 @@ export default function App() {
   }
 
   function SystemView() {
+    if (systemSubSection === 'ExtractFiles') {
+      return <ExtractFilesView />
+    }
+
     return (
       <Card>
         <CardBody>
@@ -252,6 +294,12 @@ export default function App() {
     )
   }
 
+  // If not authenticated, show login view
+  if (!isAuthenticated) {
+    return <LoginView onLogin={handleLogin} />
+  }
+
+  // Otherwise, show the main application
   return (
     <Box minH="100vh" bg="gray.50">
       <Container maxW={(section === 'Companies' && !showMenu) ? '100%' : '7xl'} py={8} px={(section === 'Companies' && !showMenu) ? 0 : undefined}>
@@ -260,6 +308,14 @@ export default function App() {
             <Flex align="center" mb={6} gap={4}>
               <Heading size="lg">Open Accounting — {section}</Heading>
               <Spacer />
+              <Menu>
+                <MenuButton as={Button} rightIcon={<ChevronDownIcon />} size="sm" mr={2}>
+                  {currentUser}
+                </MenuButton>
+                <MenuList>
+                  <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                </MenuList>
+              </Menu>
               <Button size="sm" variant="outline" onClick={() => setShowMenu(s => !s)}>
                 {showMenu ? 'Hide menu' : 'Show menu'}
               </Button>
@@ -269,6 +325,14 @@ export default function App() {
           <Flex align="center" mb={6} gap={4}>
             <Heading size="lg">Open Accounting — {section}</Heading>
             <Spacer />
+            <Menu>
+              <MenuButton as={Button} rightIcon={<ChevronDownIcon />} size="sm" mr={2}>
+                {currentUser}
+              </MenuButton>
+              <MenuList>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              </MenuList>
+            </Menu>
             <Button size="sm" variant="outline" onClick={() => setShowMenu(s => !s)}>
               {showMenu ? 'Hide menu' : 'Show menu'}
             </Button>
@@ -305,7 +369,6 @@ export default function App() {
         </Grid>
 
         <Text mt={6} fontSize="sm" color="gray.500">
-          Starter built with Chakra UI in a Purity-style aesthetic. Sorting + search included.
         </Text>
       </Container>
     </Box>
