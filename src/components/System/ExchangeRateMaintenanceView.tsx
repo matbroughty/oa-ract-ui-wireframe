@@ -1,27 +1,27 @@
 import { Card, CardBody, Divider, Heading, Stack, Text, Button, HStack, Spacer } from '@chakra-ui/react'
-import ExtractFilesTable from '../Tables/ExtractFilesTable'
+import ExchangeRatesTable from '../Tables/ExchangeRatesTable'
 
-export default function ExtractFilesView({ onBack }: { onBack: () => void }) {
+export default function ExchangeRateMaintenanceView({ onBack }: { onBack: () => void }) {
   return (
     <Stack spacing={6}>
       <Card>
         <CardBody>
           <Stack spacing={3}>
             <HStack>
-              <Heading size="md">Waiting Extract Files</Heading>
+              <Heading size="md">Exchange Rate Maintenance</Heading>
               <Spacer />
               <Button size="sm" onClick={onBack}>Back to System</Button>
             </HStack>
             <Divider />
             <Text color="gray.600">
-              This panel shows all extract files that are waiting to be processed, currently loading, 
-              have been loaded, or have failed to load. Failed extracts will display an error message.
+              This panel allows you to view, add, edit, and delete exchange rates. 
+              You can also import rates from Lendscape RF or from openexchangerates.org.
             </Text>
           </Stack>
         </CardBody>
       </Card>
 
-      <ExtractFilesTable />
+      <ExchangeRatesTable />
     </Stack>
   )
 }

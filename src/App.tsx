@@ -9,6 +9,8 @@ import { activities } from './data/activities'
 import ActivityItem from './components/Activity/ActivityItem'
 import { companies as seedCompanies } from './data/companies'
 import ExtractFilesView from './components/System/ExtractFilesView'
+import ExchangeRateMaintenanceView from './components/System/ExchangeRateMaintenanceView'
+import ConfigurationOptionsView from './components/System/ConfigurationOptionsView'
 
 // Normalize type for companies array to avoid TS inference issues with `as const` in some environments
 export type CompanySeed = {
@@ -61,7 +63,7 @@ export default function App() {
   })()
 
   type Section = 'Companies' | 'System' | 'User' | 'Recent Activity' | 'Survey'
-  type SystemSubSection = 'Main' | 'ExtractFiles'
+  type SystemSubSection = 'Main' | 'ExtractFiles' | 'ExchangeRates' | 'ConfigOptions'
   const [systemSubSection, setSystemSubSection] = useState<SystemSubSection>('Main')
   const [section, setSection] = useState<Section>('Companies')
   const [showMenu, setShowMenu] = useState(false)
@@ -134,7 +136,15 @@ export default function App() {
 
   function SystemView() {
     if (systemSubSection === 'ExtractFiles') {
-      return <ExtractFilesView />
+      return <ExtractFilesView onBack={() => setSystemSubSection('Main')} />
+    }
+
+    if (systemSubSection === 'ExchangeRates') {
+      return <ExchangeRateMaintenanceView onBack={() => setSystemSubSection('Main')} />
+    }
+
+    if (systemSubSection === 'ConfigOptions') {
+      return <ConfigurationOptionsView onBack={() => setSystemSubSection('Main')} />
     }
 
     return (
@@ -143,7 +153,27 @@ export default function App() {
           <Stack spacing={3}>
             <Heading size="md">System</Heading>
             <Divider />
-            <Text color="gray.600">Manage system metadata such as currencies, export/report definitions, etc. (coming soon)</Text>
+            <Text color="gray.600">Manage system metadata such as currencies, export/report definitions, etc.</Text>
+            <Stack spacing={3} mt={4}>
+              <Button 
+                colorScheme="blue" 
+                onClick={() => setSystemSubSection('ConfigOptions')}
+              >
+                Configuration Options
+              </Button>
+              <Button 
+                colorScheme="blue" 
+                onClick={() => setSystemSubSection('ExchangeRates')}
+              >
+                Exchange Rate Maintenance
+              </Button>
+              <Button 
+                colorScheme="blue" 
+                onClick={() => setSystemSubSection('ExtractFiles')}
+              >
+                Extract Files
+              </Button>
+            </Stack>
           </Stack>
         </CardBody>
       </Card>
