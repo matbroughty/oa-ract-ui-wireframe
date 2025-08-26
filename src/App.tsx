@@ -8,6 +8,19 @@ import { activities } from './data/activities'
 import ActivityItem from './components/Activity/ActivityItem'
 import { companies as seedCompanies } from './data/companies'
 
+// Normalize type for companies array to avoid TS inference issues with `as const` in some environments
+export type CompanySeed = {
+  id: string
+  name: string
+  email: string
+  reference: string
+  lastLoadDate: string // ISO
+  salesBalanceGBP: number
+  purchaseBalanceGBP: number
+  status: 'cloud' | 'desktop'
+}
+const companiesArr = seedCompanies as unknown as CompanySeed[]
+
 export default function App() {
   // Compute queued companies count (demo rule): cloud companies with non-zero balances and last load > 10 days ago
   const queuedCount = (() => {
@@ -18,7 +31,7 @@ export default function App() {
       const diff = Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
       return diff
     }
-    return seedCompanies.filter(c => c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && daysSince(c.lastLoadDate) > 10).length
+    return companiesArr.filter(c => c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && daysSince(c.lastLoadDate) > 10).length
   })()
 
   type Section = 'Companies' | 'System' | 'User' | 'Recent Activity' | 'Survey'
@@ -44,7 +57,7 @@ export default function App() {
 
   function CompaniesView() {
     // Compute latest last load date among queued companies
-    const queuedCompanies = seedCompanies.filter(c => {
+    const queuedCompanies = companiesArr.filter(c => {
       const today = new Date()
       const d = new Date(c.lastLoadDate)
       const days = isNaN(d.getTime()) ? 999 : Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
