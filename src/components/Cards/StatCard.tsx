@@ -8,6 +8,7 @@ export default function StatCard({
   trend,
   helperText,
   subText,
+  onClick,
 }: {
   label: string
   value: string
@@ -15,13 +16,14 @@ export default function StatCard({
   trend?: 'up' | 'down'
   helperText?: string
   subText?: string
+  onClick?: () => void
 }) {
   const isUp = trend === 'up'
   const color = trend ? (isUp ? 'green.500' : 'red.500') : 'gray.500'
   const IconCmp = isUp ? ArrowUpIcon : ArrowDownIcon
 
   return (
-    <Card h="100%">
+    <Card h="100%" onClick={onClick} cursor={onClick ? "pointer" : "default"} _hover={onClick ? { shadow: "md" } : undefined}>
       <CardBody>
         <Stack spacing={2}>
           <Text fontSize="sm" color="gray.600">{label}</Text>
