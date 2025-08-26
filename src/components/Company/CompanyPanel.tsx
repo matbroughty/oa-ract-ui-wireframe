@@ -5,12 +5,15 @@ import {
   Button,
   Card,
   CardBody,
+  Checkbox,
   Divider,
   Drawer,
   DrawerBody,
   DrawerContent,
   DrawerHeader,
   DrawerOverlay,
+  FormControl,
+  FormLabel,
   Grid,
   GridItem,
   HStack,
@@ -106,6 +109,10 @@ export type Customer = {
     concentration?: number // percentage
     dilution?: number // percentage
   }
+  isExport?: boolean
+  exportDelayDays?: number
+  contraLinked?: boolean
+  contraLinkedId?: string
 }
 
 function formatGBP(value: number) {
@@ -318,6 +325,18 @@ export default function CompanyPanel({
   // Selected party type for drill-in
   const [selectedPartyType, setSelectedPartyType] = useState<'customer' | 'supplier'>('customer')
 
+  // Export modal state
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [selectedCustomerForExport, setSelectedCustomerForExport] = useState<Customer | null>(null)
+  const [isExport, setIsExport] = useState(false)
+  const [exportDelayDays, setExportDelayDays] = useState(0)
+
+  // Contra modal state
+  const [contraModalOpen, setContraModalOpen] = useState(false)
+  const [selectedSupplierForContra, setSelectedSupplierForContra] = useState<Customer | null>(null)
+  const [selectedCustomerForContra, setSelectedCustomerForContra] = useState<Customer | null>(null)
+  const [potentialMatches, setPotentialMatches] = useState<Customer[]>([])
+
   const filteredSalesTx = useMemo(() => salesTransactions.filter(t => t.status === txFilter), [salesTransactions, txFilter])
   const filteredPurchTx = useMemo(() => purchaseTransactions.filter(t => t.status === txFilter), [purchaseTransactions, txFilter])
 
@@ -357,6 +376,88 @@ export default function CompanyPanel({
     setSelectedCustomer(s)
     setCustomerTx(seedCustomerTransactions(s, company.id))
     setCustomerOpen(true)
+  }
+
+  function openExportModal(c: Customer) {
+    setSelectedCustomerForExport(c)
+    setIsExport(c.isExport || false)
+    setExportDelayDays(c.exportDelayDays || 0)
+    setExportModalOpen(true)
+  }
+
+  function handleExportSubmit() {
+    if (selectedCustomerForExport) {
+      setCustRows(prev => prev.map(row => 
+        row.id === selectedCustomerForExport.id 
+          ? { ...row, isExport, exportDelayDays } 
+          : row
+      ))
+      setExportModalOpen(false)
+    }
+  }
+
+  // Find customers with similar names or addresses to the supplier
+  function findSimilarCustomers(supplier: Customer): Customer[] {
+    // Convert supplier name and address to lowercase for case-insensitive comparison
+    const supplierName = supplier.name.toLowerCase();
+    const supplierAddress = (supplier.address || '').toLowerCase();
+
+    // Find customers with similar names or addresses
+    return custRows.filter(customer => {
+      // Skip if customer is already contra linked
+      if (customer.contraLinked) return false;
+
+      const customerName = customer.name.toLowerCase();
+      const customerAddress = (customer.address || '').toLowerCase();
+
+      // Check for similarity in name (contains part of the name)
+      const nameSimilarity = 
+        supplierName.includes(customerName) || 
+        customerName.includes(supplierName) ||
+        // Split names into words and check for common words
+        supplierName.split(' ').some(word => word.length > 3 && customerName.includes(word)) ||
+        customerName.split(' ').some(word => word.length > 3 && supplierName.includes(word));
+
+      // Check for similarity in address (if both have addresses)
+      const addressSimilarity = 
+        supplierAddress && 
+        customerAddress && 
+        (supplierAddress.includes(customerAddress) || 
+         customerAddress.includes(supplierAddress));
+
+      return nameSimilarity || addressSimilarity;
+    });
+  }
+
+  // Open the contra modal for a supplier
+  function openContraModal(supplier: Customer) {
+    setSelectedSupplierForContra(supplier);
+    const matches = findSimilarCustomers(supplier);
+    setPotentialMatches(matches);
+    setSelectedCustomerForContra(null);
+    setContraModalOpen(true);
+  }
+
+  // Handle contra linking between a supplier and a customer
+  function handleContraSubmit() {
+    if (selectedSupplierForContra && selectedCustomerForContra) {
+      // Update the supplier in the suppliers list
+      const updatedSuppliers = suppliers.map(s => 
+        s.id === selectedSupplierForContra.id 
+          ? { ...s, contraLinked: true, contraLinkedId: selectedCustomerForContra.id } 
+          : s
+      );
+
+      // Update the customer in the customers list
+      setCustRows(prev => prev.map(c => 
+        c.id === selectedCustomerForContra.id 
+          ? { ...c, contraLinked: true, contraLinkedId: selectedSupplierForContra.id } 
+          : c
+      ));
+
+      // Close the modal
+      setContraModalOpen(false);
+    }
   }
 
   function onTxSortClick(key: TxSortKey) {
@@ -880,6 +981,7 @@ export default function CompanyPanel({
                           <Th>Status</Th>
                           <Th>Address</Th>
                           <Th>Actions</Th>
+                          <Th>EXPORT</Th>
                         </Tr>
                       </Thead>
                       <Tbody>
@@ -890,12 +992,27 @@ export default function CompanyPanel({
                             <Td isNumeric onClick={() => openCustomer(c)} cursor="pointer">{formatGBP(c.outstanding)}</Td>
                             <Td>{c.debtorPoolRef || 'not-pooled'}</Td>
                             <Td>
-                              <Badge colorScheme={c.notified ? 'green' : 'gray'}>{c.notified ? 'Notified' : 'Non-notified'}</Badge>
+                              <HStack>
+                                <Badge colorScheme={c.notified ? 'green' : 'gray'}>{c.notified ? 'Notified' : 'Non-notified'}</Badge>
+                                {c.contraLinked && <Badge colorScheme="purple">Contra</Badge>}
+                              </HStack>
                             </Td>
                             <Td onClick={() => openCustomer(c)} cursor="pointer">{c.address || '-'}</Td>
                             <Td>
                               <Button size="xs" onClick={() => setCustRows(prev => prev.map(row => row.id === c.id ? { ...row, notified: !row.notified } : row))}>
                                 {c.notified ? 'Non-notify' : 'Notify'}
+                              </Button>
+                            </Td>
+                            <Td>
+                              <Button 
+                                size="xs" 
+                                colorScheme="blue" 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  openExportModal(c); 
+                                }}
+                              >
+                                {c.isExport ? `Export (${c.exportDelayDays} days)` : 'Set Export'}
                               </Button>
                             </Td>
                           </Tr>
@@ -928,18 +1045,35 @@ export default function CompanyPanel({
                           <SupSortHeader label="Outstanding" k="outstanding" isNumeric />
                           <Th>Status</Th>
                           <Th>Address</Th>
+                          <Th>CONTRA</Th>
                         </Tr>
                       </Thead>
                       <Tbody>
                         {sortedSuppliers.map(s => (
-                          <Tr key={s.id} onClick={() => openSupplier(s)} _hover={{ bg: 'gray.50' }} cursor="pointer">
-                            <Td>{s.name}</Td>
-                            <Td>{s.reference}</Td>
-                            <Td isNumeric>{formatGBP(s.outstanding)}</Td>
-                            <Td>
-                              <Badge colorScheme={s.notified ? 'green' : 'gray'}>{s.notified ? 'Notified' : 'Non-notified'}</Badge>
+                          <Tr key={s.id} _hover={{ bg: 'gray.50' }}>
+                            <Td onClick={() => openSupplier(s)} cursor="pointer">{s.name}</Td>
+                            <Td onClick={() => openSupplier(s)} cursor="pointer">{s.reference}</Td>
+                            <Td isNumeric onClick={() => openSupplier(s)} cursor="pointer">{formatGBP(s.outstanding)}</Td>
+                            <Td onClick={() => openSupplier(s)} cursor="pointer">
+                              <HStack>
+                                <Badge colorScheme={s.notified ? 'green' : 'gray'}>{s.notified ? 'Notified' : 'Non-notified'}</Badge>
+                                {s.contraLinked && <Badge colorScheme="purple">Contra</Badge>}
+                              </HStack>
                             </Td>
-                            <Td>{s.address || '-'}</Td>
+                            <Td onClick={() => openSupplier(s)} cursor="pointer">{s.address || '-'}</Td>
+                            <Td>
+                              <Button 
+                                size="xs" 
+                                colorScheme="purple" 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  openContraModal(s); 
+                                }}
+                                isDisabled={s.contraLinked}
+                              >
+                                {s.contraLinked ? 'Linked' : 'Link'}
+                              </Button>
+                            </Td>
                           </Tr>
                         ))}
                       </Tbody>
@@ -1307,6 +1441,134 @@ export default function CompanyPanel({
         </DrawerBody>
       </DrawerContent>
     </Drawer>
+
+    {/* Export modal */}
+    <Modal isOpen={exportModalOpen} onClose={() => setExportModalOpen(false)} size="md">
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Export Settings</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          {selectedCustomerForExport && (
+            <Stack spacing={4}>
+              <Text>
+                Do you want to mark <Text as="span" fontWeight="semibold">{selectedCustomerForExport.name}</Text> as export?
+              </Text>
+
+              <Checkbox 
+                isChecked={isExport} 
+                onChange={(e) => setIsExport(e.target.checked)}
+                colorScheme="blue"
+                size="lg"
+                mb={2}
+              >
+                Mark as Export
+              </Checkbox>
+
+              {isExport && (
+                <FormControl>
+                  <FormLabel>Delay Days (0-999)</FormLabel>
+                  <Input 
+                    type="number" 
+                    min={0}
+                    max={999}
+                    value={exportDelayDays}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (!isNaN(value) && value >= 0 && value <= 999) {
+                        setExportDelayDays(value);
+                      }
+                    }}
+                  />
+                  <Text fontSize="sm" color="gray.500" mt={1}>
+                    Enter the number of days to delay (0-999)
+                  </Text>
+                </FormControl>
+              )}
+            </Stack>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" mr={3} onClick={() => setExportModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button colorScheme="blue" onClick={handleExportSubmit}>
+            Save
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+
+    {/* Contra modal */}
+    <Modal isOpen={contraModalOpen} onClose={() => setContraModalOpen(false)} size="lg">
+      <ModalOverlay />
+      <ModalContent maxW="800px">
+        <ModalHeader>Contra Link</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          {selectedSupplierForContra && (
+            <Stack spacing={4}>
+              <Text>
+                Select a Customer to link with Supplier <Text as="span" fontWeight="semibold">{selectedSupplierForContra.name}</Text>
+              </Text>
+
+              {potentialMatches.length > 0 ? (
+                <TableContainer>
+                  <Table size="sm">
+                    <Thead>
+                      <Tr>
+                        <Th>Customer</Th>
+                        <Th>Reference</Th>
+                        <Th>Address</Th>
+                        <Th>Select</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {potentialMatches.map(customer => (
+                        <Tr 
+                          key={customer.id} 
+                          _hover={{ bg: 'gray.50' }}
+                          bg={selectedCustomerForContra?.id === customer.id ? 'purple.50' : undefined}
+                        >
+                          <Td>{customer.name}</Td>
+                          <Td>{customer.reference}</Td>
+                          <Td>{customer.address || '-'}</Td>
+                          <Td>
+                            <Button 
+                              size="xs" 
+                              colorScheme={selectedCustomerForContra?.id === customer.id ? 'purple' : 'gray'}
+                              onClick={() => setSelectedCustomerForContra(customer)}
+                            >
+                              {selectedCustomerForContra?.id === customer.id ? 'Selected' : 'Select'}
+                            </Button>
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Text color="gray.600">
+                  No potential matches found. Try selecting a different supplier or manually search for a customer.
+                </Text>
+              )}
+            </Stack>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" mr={3} onClick={() => setContraModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            colorScheme="purple" 
+            onClick={handleContraSubmit}
+            isDisabled={!selectedCustomerForContra}
+          >
+            Link
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
     </>
   )
 }

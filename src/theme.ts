@@ -1,40 +1,40 @@
 // Custom theme for Chakra UI
 import { extendTheme } from '@chakra-ui/react'
 
-// Define a color palette
+// Define a color palette - more subdued for financial applications
 const colors = {
   brand: {
-    50: '#e6f7ff',
-    100: '#b3e0ff',
-    200: '#80caff',
-    300: '#4db3ff',
-    400: '#1a9dff',
-    500: '#0080ff',
-    600: '#0066cc',
-    700: '#004d99',
-    800: '#003366',
-    900: '#001a33',
+    50: '#edf2f7',
+    100: '#e2e8f0',
+    200: '#cbd5e0',
+    300: '#a0aec0',
+    400: '#718096',
+    500: '#4a5568',
+    600: '#2d3748',
+    700: '#1a202c',
+    800: '#171923',
+    900: '#0f1117',
   },
   accent: {
-    50: '#f0f9eb',
-    100: '#d7efc4',
-    200: '#bde59d',
-    300: '#a3db76',
-    400: '#8ad14f',
-    500: '#70c728',
-    600: '#5a9f20',
-    700: '#437718',
-    800: '#2d4f10',
-    900: '#162708',
+    50: '#f7fafc',
+    100: '#edf2f7',
+    200: '#e2e8f0',
+    300: '#cbd5e0',
+    400: '#a0aec0',
+    500: '#718096',
+    600: '#4a5568',
+    700: '#2d3748',
+    800: '#1a202c',
+    900: '#171923',
   },
 }
 
-// Define custom component styles
+// Define custom component styles - more subtle for financial applications
 const components = {
   Button: {
     baseStyle: {
-      fontWeight: 'semibold',
-      borderRadius: 'md',
+      fontWeight: 'medium',
+      borderRadius: 'sm',
       _focus: {
         boxShadow: 'outline',
       },
@@ -44,33 +44,29 @@ const components = {
         bg: props.colorScheme === 'blue' ? 'brand.500' : undefined,
         _hover: {
           bg: props.colorScheme === 'blue' ? 'brand.600' : undefined,
-          transform: 'translateY(-2px)',
-          boxShadow: 'md',
+          boxShadow: 'sm',
         },
-        transition: 'all 0.2s ease-in-out',
+        transition: 'background 0.2s ease-in-out',
       }),
       outline: {
         _hover: {
-          transform: 'translateY(-2px)',
-          boxShadow: 'sm',
+          bg: 'gray.50',
         },
-        transition: 'all 0.2s ease-in-out',
+        transition: 'background 0.2s ease-in-out',
       },
     },
   },
   Card: {
     baseStyle: {
       container: {
-        borderRadius: 'lg',
-        boxShadow: 'md',
+        borderRadius: 'md',
+        boxShadow: 'sm',
         overflow: 'hidden',
-        transition: 'all 0.2s ease-in-out',
-        _hover: {
-          boxShadow: 'lg',
-        },
+        borderWidth: '1px',
+        borderColor: 'gray.200',
       },
       body: {
-        padding: '6',
+        padding: '4',
       },
     },
   },
@@ -78,24 +74,24 @@ const components = {
     variants: {
       simple: {
         th: {
-          borderBottom: '2px solid',
-          borderColor: 'gray.200',
-          padding: '4',
-          fontWeight: 'bold',
+          borderBottom: '1px solid',
+          borderColor: 'gray.300',
+          padding: '3',
+          fontWeight: 'semibold',
           textTransform: 'uppercase',
           fontSize: 'xs',
           letterSpacing: 'wider',
+          color: 'gray.600',
         },
         td: {
           borderBottom: '1px solid',
-          borderColor: 'gray.100',
-          padding: '4',
+          borderColor: 'gray.200',
+          padding: '3',
         },
         tbody: {
           tr: {
             _hover: {
               bg: 'gray.50',
-              transition: 'background-color 0.2s ease-in-out',
             },
           },
         },
@@ -104,10 +100,11 @@ const components = {
   },
   Badge: {
     baseStyle: {
-      borderRadius: 'full',
+      borderRadius: 'sm',
       textTransform: 'capitalize',
-      fontWeight: 'medium',
-      px: 3,
+      fontWeight: 'normal',
+      px: 2,
+      fontSize: 'xs',
     },
   },
 }
@@ -116,11 +113,9 @@ const components = {
 const styles = {
   global: {
     body: {
-      bg: 'gray.50',
+      bg: 'gray.100',
       color: 'gray.800',
-      backgroundImage: 
-        'radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.05) 1px, transparent 0)',
-      backgroundSize: '40px 40px',
+      // Remove the background pattern for a cleaner look
     },
   },
 }
@@ -138,7 +133,7 @@ const theme = extendTheme({
   styles,
   fonts,
   shadows: {
-    outline: '0 0 0 3px rgba(0, 128, 255, 0.3)',
+    outline: '0 0 0 2px rgba(74, 85, 104, 0.2)', // More subtle outline using brand color
   },
 })
 
