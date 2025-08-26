@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import {
   Badge,
   Box,
@@ -90,6 +90,12 @@ export type Transaction = {
   type?: 'Invoice' | 'Debit Adjustment' | 'Payment' | 'Credit Note' | 'Credit Adjustment'
   documentDate?: string // ISO
   entryDate?: string // ISO
+  changedDate?: string // ISO
+  closedDate?: string // ISO
+  changeDetails?: {
+    balanceChange?: string
+    [key: string]: string | undefined
+  }
 }
 
 export type Customer = {
@@ -357,6 +363,16 @@ export default function CompanyPanel({
   const [selectedSupplierForContra, setSelectedSupplierForContra] = useState<Customer | null>(null)
   const [selectedCustomerForContra, setSelectedCustomerForContra] = useState<Customer | null>(null)
   const [potentialMatches, setPotentialMatches] = useState<Customer[]>([])
+
+  // Transaction modal state
+  const [transactionModalOpen, setTransactionModalOpen] = useState(false)
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+
+  // Function to open transaction details modal
+  function openTransactionDetails(tx: Transaction) {
+    setSelectedTransaction(tx)
+    setTransactionModalOpen(true)
+  }
 
   const filteredSalesTx = useMemo(() => salesTransactions.filter(t => t.status === txFilter), [salesTransactions, txFilter])
   const filteredPurchTx = useMemo(() => purchaseTransactions.filter(t => t.status === txFilter), [purchaseTransactions, txFilter])
@@ -780,11 +796,12 @@ export default function CompanyPanel({
                       onClick={() => setRegistrationsModalOpen(true)}
                       mt={2}
                       py={0}
-                      px={2}
+                      px={1}
                       fontSize="xs"
-                      height="20px"
+                      height="18px"
+                      minW="auto"
                     >
-                      Registrations
+                      Reg
                     </Button>
                   </Stack>
                 </CardBody>
@@ -884,7 +901,12 @@ export default function CompanyPanel({
                         {sortedSalesTx.map(tx => {
                           const past = daysPastDue(tx.dueDate)
                           return (
-                            <Tr key={tx.id}>
+                            <Tr 
+                              key={tx.id} 
+                              onClick={() => openTransactionDetails(tx)}
+                              cursor="pointer"
+                              _hover={{ bg: 'gray.50' }}
+                            >
                               <Td>
                                 <VStack align="start" spacing={0}>
                                   <Text fontWeight="semibold">{tx.customerName}</Text>
@@ -1616,6 +1638,101 @@ export default function CompanyPanel({
         setCompanyRegistrations(prev => [newRegistration, ...prev]);
       }}
     />
+
+    {/* Transaction Details Modal */}
+    <Modal isOpen={transactionModalOpen} onClose={() => setTransactionModalOpen(false)} size="lg">
+      <ModalOverlay />
+      <ModalContent maxW="800px" maxH="90vh">
+        <ModalHeader>Transaction Details</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody overflowY="auto" maxH="calc(90vh - 130px)">
+          {selectedTransaction && (
+            <Stack spacing={4}>
+              {/* Customer Details Section */}
+              <Card>
+                <CardBody>
+                  <Stack spacing={3}>
+                    <Text fontSize="sm" color="gray.600">Customer Details</Text>
+                    <Grid templateColumns="1fr 2fr" gap={2}>
+                      <Text fontWeight="semibold">Name:</Text>
+                      <Text>{selectedTransaction.customerName}</Text>
+                      <Text fontWeight="semibold">Reference:</Text>
+                      <Text>{selectedTransaction.customerRef}</Text>
+                    </Grid>
+                  </Stack>
+                </CardBody>
+              </Card>
+
+              {/* Transaction Details Section */}
+              <Card>
+                <CardBody>
+                  <Stack spacing={3}>
+                    <Text fontSize="sm" color="gray.600">Transaction Details</Text>
+                    <Grid templateColumns="1fr 2fr" gap={2}>
+                      <Text fontWeight="semibold">Document:</Text>
+                      <Text>{selectedTransaction.document}</Text>
+                      <Text fontWeight="semibold">Due Date:</Text>
+                      <Text>{new Date(selectedTransaction.dueDate).toLocaleDateString('en-GB')}</Text>
+                      <Text fontWeight="semibold">Type:</Text>
+                      <Text>{selectedTransaction.type || (selectedTransaction.amount >= 0 ? 'Invoice' : 'Payment')}</Text>
+                      <Text fontWeight="semibold">Amount:</Text>
+                      <Text>{formatGBP(selectedTransaction.amount)}</Text>
+                      <Text fontWeight="semibold">Balance:</Text>
+                      <Text>{formatGBP(selectedTransaction.remaining)}</Text>
+                      <Text fontWeight="semibold">Unique Key:</Text>
+                      <Text>{selectedTransaction.id}</Text>
+                      <Text fontWeight="semibold">Document Date:</Text>
+                      <Text>{selectedTransaction.documentDate ? new Date(selectedTransaction.documentDate).toLocaleDateString('en-GB') : '-'}</Text>
+                      <Text fontWeight="semibold">Entry Date:</Text>
+                      <Text>{selectedTransaction.entryDate ? new Date(selectedTransaction.entryDate).toLocaleDateString('en-GB') : '-'}</Text>
+                      <Text fontWeight="semibold">Closed Date:</Text>
+                      <Text>{selectedTransaction.closedDate ? new Date(selectedTransaction.closedDate).toLocaleDateString('en-GB') : '-'}</Text>
+                      <Text fontWeight="semibold">Status:</Text>
+                      <Text>{selectedTransaction.status}</Text>
+                    </Grid>
+                  </Stack>
+                </CardBody>
+              </Card>
+
+              {/* Change Information Section - Only shown if there's a change date */}
+              {selectedTransaction.changedDate && (
+                <Card>
+                  <CardBody>
+                    <Stack spacing={3}>
+                      <Text fontSize="sm" color="gray.600">Change Information</Text>
+                      <Grid templateColumns="1fr 2fr" gap={2}>
+                        <Text fontWeight="semibold">Changed Date:</Text>
+                        <Text>{new Date(selectedTransaction.changedDate).toLocaleDateString('en-GB')}</Text>
+                        {selectedTransaction.changeDetails && (
+                          <>
+                            <Text fontWeight="semibold">Balance Change:</Text>
+                            <Text>{selectedTransaction.changeDetails.balanceChange || 'N/A'}</Text>
+                            {Object.entries(selectedTransaction.changeDetails)
+                              .filter(([key]) => key !== 'balanceChange')
+                              .map(([key, value]) => (
+                                <React.Fragment key={key}>
+                                  <Text fontWeight="semibold">{key}:</Text>
+                                  <Text>{value}</Text>
+                                </React.Fragment>
+                              ))
+                            }
+                          </>
+                        )}
+                      </Grid>
+                    </Stack>
+                  </CardBody>
+                </Card>
+              )}
+            </Stack>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setTransactionModalOpen(false)}>
+            Close
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
     </>
   )
 }

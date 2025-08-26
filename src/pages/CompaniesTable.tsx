@@ -565,11 +565,18 @@ export default function CompaniesTable() {
         <Flex align="center" mb={4} gap={4}>
           <Box flex="1">
             <Text fontWeight="semibold">Companies ({sorted.length})</Text>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              colorScheme="gray" 
+              onClick={createDialog.onOpen} 
+              leftIcon={<AddIcon />} 
+              mt={2}
+            >
+              Create new company
+            </Button>
           </Box>
-          <Box flex="1" textAlign="center">
-            <Button colorScheme="blue" onClick={createDialog.onOpen} leftIcon={<AddIcon />}>Create new company</Button>
-          </Box>
-          <Box flex="1">
+          <Box flex="2" textAlign="right">
             <InputGroup maxW="320px" ml="auto">
               <InputLeftElement pointerEvents="none">
                 <Icon as={SearchIcon} />

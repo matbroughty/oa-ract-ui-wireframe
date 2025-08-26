@@ -24,10 +24,10 @@ export const companies = [
     "name": "Goode Wood Furniture",
     "email": "contact03@goode.com",
     "reference": "9491945/317",
-    "lastLoadDate": "2025-06-22",
+    "lastLoadDate": "2023-06-22",
     "salesBalanceGBP": 235213.89,
     "purchaseBalanceGBP": 4423.8,
-    "status": "cloud"
+    "status": "queued"
   },
   {
     "id": "4",
@@ -104,7 +104,7 @@ export const companies = [
     "name": "Falcon Tools",
     "email": "contact11@falcon.com",
     "reference": "0336520/482",
-    "lastLoadDate": "2025-06-14",
+    "lastLoadDate": "2023-06-14",
     "salesBalanceGBP": 90077.61,
     "purchaseBalanceGBP": 134892.02,
     "status": "cloud"
@@ -174,7 +174,7 @@ export const companies = [
     "name": "Kensington Books",
     "email": "contact18@kensington.com",
     "reference": "5201407/278",
-    "lastLoadDate": "2025-05-27",
+    "lastLoadDate": "2023-05-27",
     "salesBalanceGBP": 20066.99,
     "purchaseBalanceGBP": 94132.56,
     "status": "cloud"

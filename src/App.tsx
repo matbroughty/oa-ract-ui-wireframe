@@ -22,7 +22,7 @@ export type CompanySeed = {
   lastLoadDate: string // ISO
   salesBalanceGBP: number
   purchaseBalanceGBP: number
-  status: 'cloud' | 'desktop'
+  status: 'cloud' | 'desktop' | 'queued'
 }
 const companiesArr = seedCompanies as unknown as CompanySeed[]
 
@@ -60,7 +60,7 @@ export default function App() {
       const diff = Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
       return diff
     }
-    return companiesArr.filter(c => c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && daysSince(c.lastLoadDate) > 10).length
+    return companiesArr.filter(c => (c.status === 'queued' || (c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && daysSince(c.lastLoadDate) > 10))).length
   })()
 
   type Section = 'Companies' | 'System' | 'User' | 'Recent Activity' | 'Survey'
@@ -100,7 +100,7 @@ export default function App() {
       const today = new Date()
       const d = new Date(c.lastLoadDate)
       const days = isNaN(d.getTime()) ? 999 : Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
-      return c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && days > 10
+      return c.status === 'queued' || (c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && days > 10)
     })
     let lastQueuedLoadSubText: string | undefined
     if (queuedCompanies.length > 0) {
