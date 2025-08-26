@@ -124,6 +124,9 @@ function seedCustomers(companyId: string, count = 8): Customer[] {
   for (let i = 0; i < count; i++) {
     const outstanding = Math.round((Math.random() * 20000) * 100) / 100
     const notified = i % 2 === 0 // alternate for demo purposes
+    // Generate a debtor pool reference for some customers; others are not pooled
+    const isPooled = i % 3 !== 0
+    const poolRef = isPooled ? `${String(1000000 + (i * 79)).padStart(7, '0')}:${String(1 + (i % 999)).padStart(3, '0')}` : 'not-pooled'
     arr.push({
       id: `${companyId}-cust-${i+1}`,
       name: `Customer ${i+1}`,
@@ -131,6 +134,7 @@ function seedCustomers(companyId: string, count = 8): Customer[] {
       outstanding,
       address: `${10 + i} High Street, Townsville`,
       notified,
+      debtorPoolRef: poolRef,
     })
   }
   return arr

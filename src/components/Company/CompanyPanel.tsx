@@ -94,6 +94,8 @@ export type Customer = {
   outstanding: number
   address?: string
   notified?: boolean
+  debtorPoolRef?: string
+  enrichment?: Record<string, string>
 }
 
 function formatGBP(value: number) {
@@ -262,9 +264,11 @@ export default function CompanyPanel({
 
   // Customers table filter/sort state
   const [custSearch, setCustSearch] = useState('')
-  type CustSortKey = 'name' | 'reference' | 'outstanding'
+  type CustSortKey = 'name' | 'reference' | 'outstanding' | 'debtorPoolRef'
   const [custSortKey, setCustSortKey] = useState<CustSortKey>('name')
   const [custSortDir, setCustSortDir] = useState<'asc' | 'desc'>('asc')
+  // Keep a local copy of customers so we can toggle notified and apply enrichment
+  const [custRows, setCustRows] = useState<Customer[]>(customers)
 
   // Suppliers table filter/sort state
   const [supSearch, setSupSearch] = useState('')
@@ -327,12 +331,13 @@ export default function CompanyPanel({
 
   const filteredCustomers = useMemo(() => {
     const term = custSearch.trim().toLowerCase()
-    if (!term) return customers
-    return customers.filter(c =>
+    if (!term) return custRows
+    return custRows.filter(c =>
       c.name.toLowerCase().includes(term) ||
-      c.reference.toLowerCase().includes(term)
+      c.reference.toLowerCase().includes(term) ||
+      (c.debtorPoolRef || '').toLowerCase().includes(term)
     )
-  }, [customers, custSearch])
+  }, [custRows, custSearch])
 
   const sortedCustomers = useMemo(() => {
     const arr = [...filteredCustomers]
@@ -402,6 +407,56 @@ export default function CompanyPanel({
     )
   }
 
+  // Enrichment state and handlers
+  const [enrichOpen, setEnrichOpen] = useState(false)
+  const [enriching, setEnriching] = useState(false)
+
+  function parseCsv(text: string): { reference: string; key: string; value: string }[] {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+    const rows: { reference: string; key: string; value: string }[] = []
+    for (const line of lines) {
+      const parts = line.split(',').map(p => p.trim())
+      if (parts.length < 2) continue
+      let reference = parts[0]
+      let key = 'value'
+      let value = parts[1]
+      if (parts.length >= 3) {
+        key = parts[1]
+        value = parts.slice(2).join(',')
+      }
+      // Skip header row heuristically
+      const low = reference.toLowerCase()
+      if (low === 'reference' || low === 'customerref' || low === 'customer_reference') continue
+      rows.push({ reference, key, value })
+    }
+    return rows
+  }
+
+  async function handleCsvFile(file?: File | null) {
+    if (!file) return
+    setEnriching(true)
+    try {
+      const text = await file.text()
+      const rows = parseCsv(text)
+      let applied = 0
+      setCustRows(prev => prev.map(c => {
+        const matches = rows.filter(r => r.reference === c.reference)
+        if (matches.length === 0) return c
+        applied += 1
+        const enrichment: Record<string, string> = { ...(c.enrichment || {}) }
+        for (const r of matches) {
+          enrichment[r.key] = r.value
+        }
+        return { ...c, enrichment }
+      }))
+      // optional toast can be shown by using a toast from parent; here we keep silent to avoid new imports
+      // But we can at least close the modal
+    } finally {
+      setEnriching(false)
+      setEnrichOpen(false)
+    }
+  }
+
   function SupSortHeader({ label, k, isNumeric }: { label: string; k: SupSortKey; isNumeric?: boolean }) {
     const active = k === supSortKey
     const dir = active ? supSortDir : undefined
@@ -412,6 +467,70 @@ export default function CompanyPanel({
           {active && (dir === 'asc' ? <Icon as={TriangleUpIcon} /> : <Icon as={TriangleDownIcon} />)}
         </HStack>
       </Th>
+    )
+  }
+
+  // Lightweight inline Attributes editor for a customer
+  function AttributesEditor({ customer, onSave }: { customer: Customer; onSave: (map: Record<string,string>) => void }) {
+    const initRows = Object.entries(customer.enrichment || {}).map(([k,v]) => ({ key: k, value: v }))
+    const [rows, setRows] = useState<{ key: string; value: string }[]>(initRows)
+
+    function addRow() {
+      setRows(prev => [...prev, { key: '', value: '' }])
+    }
+    function updateRow(idx: number, patch: Partial<{ key: string; value: string }>) {
+      setRows(prev => prev.map((r,i) => i===idx ? { ...r, ...patch } : r))
+    }
+    function removeRow(idx: number) {
+      setRows(prev => prev.filter((_,i) => i!==idx))
+    }
+    function save() {
+      const map: Record<string, string> = {}
+      rows.forEach(r => { if (r.key.trim()) map[r.key.trim()] = r.value })
+      onSave(map)
+    }
+
+    return (
+      <Stack spacing={3}>
+        <HStack justify="space-between">
+          <Text fontWeight="semibold">Attributes</Text>
+          <HStack>
+            <Button size="sm" onClick={addRow}>Add</Button>
+            <Button size="sm" colorScheme="blue" onClick={save}>Save</Button>
+          </HStack>
+        </HStack>
+        <TableContainer>
+          <Table size="sm">
+            <Thead>
+              <Tr>
+                <Th w="40%">Name</Th>
+                <Th>Value</Th>
+                <Th w="80px">Actions</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {rows.length === 0 && (
+                <Tr>
+                  <Td colSpan={3}><Text fontSize="sm" color="gray.500">No attributes</Text></Td>
+                </Tr>
+              )}
+              {rows.map((r, idx) => (
+                <Tr key={idx}>
+                  <Td>
+                    <Input size="sm" placeholder="name" value={r.key} onChange={(e) => updateRow(idx, { key: e.target.value })} />
+                  </Td>
+                  <Td>
+                    <Input size="sm" placeholder="value" value={r.value} onChange={(e) => updateRow(idx, { value: e.target.value })} />
+                  </Td>
+                  <Td>
+                    <Button size="xs" variant="ghost" colorScheme="red" onClick={() => removeRow(idx)}>Delete</Button>
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </TableContainer>
+      </Stack>
     )
   }
 
@@ -701,12 +820,15 @@ export default function CompanyPanel({
                 <Stack spacing={3}>
                   <HStack justify="space-between">
                     <Text fontWeight="semibold">Customers</Text>
-                    <InputGroup maxW="320px">
-                      <InputLeftElement pointerEvents="none">
-                        <Icon as={SearchIcon} />
-                      </InputLeftElement>
-                      <Input placeholder="Filter by name or reference…" value={custSearch} onChange={e => setCustSearch(e.target.value)} />
-                    </InputGroup>
+                    <HStack spacing={3}>
+                      <Button size="sm" variant="outline" onClick={() => setEnrichOpen(true)}>Enrichment</Button>
+                      <InputGroup maxW="320px">
+                        <InputLeftElement pointerEvents="none">
+                          <Icon as={SearchIcon} />
+                        </InputLeftElement>
+                        <Input placeholder="Filter by name, reference or pool…" value={custSearch} onChange={e => setCustSearch(e.target.value)} />
+                      </InputGroup>
+                    </HStack>
                   </HStack>
                   <TableContainer>
                     <Table size="sm">
@@ -715,20 +837,28 @@ export default function CompanyPanel({
                           <SortHeader label="Customer" k="name" />
                           <SortHeader label="Reference" k="reference" />
                           <SortHeader label="Outstanding" k="outstanding" isNumeric />
+                          <SortHeader label="Debtor Pool Ref" k="debtorPoolRef" />
                           <Th>Status</Th>
                           <Th>Address</Th>
+                          <Th>Actions</Th>
                         </Tr>
                       </Thead>
                       <Tbody>
                         {sortedCustomers.map(c => (
-                          <Tr key={c.id} onClick={() => openCustomer(c)} _hover={{ bg: 'gray.50' }} cursor="pointer">
-                            <Td>{c.name}</Td>
-                            <Td>{c.reference}</Td>
-                            <Td isNumeric>{formatGBP(c.outstanding)}</Td>
+                          <Tr key={c.id} _hover={{ bg: 'gray.50' }}>
+                            <Td onClick={() => openCustomer(c)} cursor="pointer">{c.name}</Td>
+                            <Td onClick={() => openCustomer(c)} cursor="pointer">{c.reference}</Td>
+                            <Td isNumeric onClick={() => openCustomer(c)} cursor="pointer">{formatGBP(c.outstanding)}</Td>
+                            <Td>{c.debtorPoolRef || 'not-pooled'}</Td>
                             <Td>
                               <Badge colorScheme={c.notified ? 'green' : 'gray'}>{c.notified ? 'Notified' : 'Non-notified'}</Badge>
                             </Td>
-                            <Td>{c.address || '-'}</Td>
+                            <Td onClick={() => openCustomer(c)} cursor="pointer">{c.address || '-'}</Td>
+                            <Td>
+                              <Button size="xs" onClick={() => setCustRows(prev => prev.map(row => row.id === c.id ? { ...row, notified: !row.notified } : row))}>
+                                {c.notified ? 'Non-notify' : 'Notify'}
+                              </Button>
+                            </Td>
                           </Tr>
                         ))}
                       </Tbody>
@@ -784,6 +914,29 @@ export default function CompanyPanel({
       </DrawerContent>
     </Drawer>
 
+    {/* Enrichment modal */}
+    <Modal isOpen={enrichOpen} onClose={() => setEnrichOpen(false)} size="md">
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Customer Enrichment</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <Stack spacing={3}>
+            <Text fontSize="sm" color="gray.600">Upload a CSV containing customer reference and name/value pairs to enrich customer details.</Text>
+            <Text fontSize="sm" color="gray.500">Supported formats:</Text>
+            <Box as="ul" pl={5} color="gray.600" fontSize="sm">
+              <Box as="li">reference,key,value</Box>
+              <Box as="li">reference,value (key will default to "value")</Box>
+            </Box>
+            <Input type="file" accept=".csv,text/csv" onChange={(e) => handleCsvFile(e.target.files?.[0] || null)} disabled={enriching} />
+          </Stack>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" mr={3} onClick={() => setEnrichOpen(false)} disabled={enriching}>Close</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+
     {/* Pool Level Data modal */}
     <Modal isOpen={poolOpen} onClose={() => setPoolOpen(false)} size="lg">
       <ModalOverlay />
@@ -827,9 +980,9 @@ export default function CompanyPanel({
     </Modal>
 
     {/* Customer panel */}
-    <Drawer isOpen={customerOpen} placement="right" onClose={() => setCustomerOpen(false)} size="md">
+    <Drawer isOpen={customerOpen} placement="right" onClose={() => setCustomerOpen(false)} size="xl">
       <DrawerOverlay />
-      <DrawerContent>
+      <DrawerContent w={{ base: '100%', md: '85vw', lg: '80vw' }} maxW="none">
         <DrawerHeader borderBottomWidth="1px">
           <HStack justify="space-between">
             <VStack align="start" spacing={0}>
@@ -856,39 +1009,149 @@ export default function CompanyPanel({
               </Card>
             )}
 
+            {/* Customer-level charts */}
+            {selectedCustomer && (
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                <Card>
+                  <CardBody>
+                    <Stack spacing={3}>
+                      <Text fontSize="sm" color="gray.600">Retentions (Customer)</Text>
+                      {(() => {
+                        const tot = Math.max(1, Math.round((selectedCustomer.outstanding || 0)))
+                        const ret = {
+                          ageing: Math.round(tot * 0.25),
+                          manual: Math.round(tot * 0.1),
+                          concentration: Math.round(tot * 0.15),
+                          funding: Math.round(tot * 0.1),
+                          contra: Math.round(tot * 0.1),
+                          approved: Math.max(0, tot - Math.round(tot * (0.25+0.1+0.15+0.1+0.1))),
+                        } as Retentions
+                        return <BarChart data={ret} />
+                      })()}
+                    </Stack>
+                  </CardBody>
+                </Card>
+                <Card>
+                  <CardBody>
+                    <Stack spacing={3}>
+                      <Text fontSize="sm" color="gray.600">Ageing (Customer)</Text>
+                      {(() => {
+                        const tot = Math.max(1, Math.round((selectedCustomer.outstanding || 0)))
+                        const ad = {
+                          notDue: Math.round(tot * 0.35),
+                          d30: Math.round(tot * 0.25),
+                          d60: Math.round(tot * 0.18),
+                          d90: Math.round(tot * 0.12),
+                          over: Math.max(0, tot - Math.round(tot * (0.35+0.25+0.18+0.12))),
+                        } as Ageing
+                        return <AgeingBarChart ageing={ad} />
+                      })()}
+                    </Stack>
+                  </CardBody>
+                </Card>
+              </SimpleGrid>
+            )}
+
+            {/* Customer transactions table matching company-level */}
             <Card>
               <CardBody>
                 <Stack spacing={3}>
-                  <Text fontWeight="semibold">Transactions ({customerTx.length})</Text>
+                  <HStack justify="space-between">
+                    <Text fontWeight="semibold">Transactions ({customerTx.length})</Text>
+                    <HStack>
+                      <Button size="sm" variant={txFilter==='open'?'solid':'outline'} onClick={() => setTxFilter('open')}>Open</Button>
+                      <Button size="sm" variant={txFilter==='closed'?'solid':'outline'} onClick={() => setTxFilter('closed')}>Closed</Button>
+                    </HStack>
+                  </HStack>
                   <TableContainer>
                     <Table size="sm">
                       <Thead>
                         <Tr>
+                          <Th>Party</Th>
+                          <Th>Notified</Th>
+                          <Th>Type</Th>
                           <Th>Document</Th>
-                          <Th isNumeric>Amount</Th>
-                          <Th isNumeric>Remaining</Th>
+                          <Th>Document Date</Th>
+                          <Th>Entry Date</Th>
+                          <Th isNumeric cursor="pointer" userSelect="none" onClick={() => onTxSortClick('amount')}>
+                            <HStack spacing={1} justify="flex-end">
+                              <Box>Amount</Box>
+                              {txSortKey === 'amount' && (txSortDir === 'asc' ? <Icon as={TriangleUpIcon} /> : <Icon as={TriangleDownIcon} />)}
+                            </HStack>
+                          </Th>
+                          <Th isNumeric cursor="pointer" userSelect="none" onClick={() => onTxSortClick('remaining')}>
+                            <HStack spacing={1} justify="flex-end">
+                              <Box>Remaining</Box>
+                              {txSortKey === 'remaining' && (txSortDir === 'asc' ? <Icon as={TriangleUpIcon} /> : <Icon as={TriangleDownIcon} />)}
+                            </HStack>
+                          </Th>
                           <Th>Due</Th>
-                          <Th>Status</Th>
+                          <Th>Past Due</Th>
                         </Tr>
                       </Thead>
                       <Tbody>
-                        {customerTx.map(tx => (
-                          <Tr key={tx.id}>
-                            <Td>{tx.document}</Td>
-                            <Td isNumeric>{formatGBP(tx.amount)}</Td>
-                            <Td isNumeric>{formatGBP(tx.remaining)}</Td>
-                            <Td>{new Date(tx.dueDate).toLocaleDateString('en-GB')}</Td>
-                            <Td>
-                              <Badge colorScheme={tx.status==='open'?'yellow':'green'} textTransform="capitalize">{tx.status}</Badge>
-                            </Td>
-                          </Tr>
-                        ))}
+                        {(() => {
+                          const arr = customerTx.filter(t => t.status === txFilter).sort((a,b)=> (a[txSortKey]! < b[txSortKey]!? (txSortDir==='asc'?-1:1) : (a[txSortKey]! > b[txSortKey]!? (txSortDir==='asc'?1:-1):0)))
+                          return arr.map(tx => {
+                            const past = daysPastDue(tx.dueDate)
+                            return (
+                              <Tr key={tx.id}>
+                                <Td>
+                                  <VStack align="start" spacing={0}>
+                                    <Text fontWeight="semibold">{tx.customerName}</Text>
+                                    <Text fontSize="sm" color="gray.600">{tx.customerRef}</Text>
+                                  </VStack>
+                                </Td>
+                                <Td>
+                                  <Badge colorScheme={tx.notified ? 'green' : 'gray'}>{tx.notified ? 'Notified' : 'Non-notified'}</Badge>
+                                </Td>
+                                <Td>{tx.type || (tx.amount >= 0 ? 'Invoice' : 'Payment')}</Td>
+                                <Td>{tx.document}</Td>
+                                <Td>{tx.documentDate ? new Date(tx.documentDate).toLocaleDateString('en-GB') : '-'}</Td>
+                                <Td>{tx.entryDate ? new Date(tx.entryDate).toLocaleDateString('en-GB') : '-'}</Td>
+                                <Td isNumeric>{formatGBP(tx.amount)}</Td>
+                                <Td isNumeric>{formatGBP(tx.remaining)}</Td>
+                                <Td>{new Date(tx.dueDate).toLocaleDateString('en-GB')}</Td>
+                                <Td>
+                                  {past > 0 ? (
+                                    <Badge colorScheme="red">{past}d</Badge>
+                                  ) : (
+                                    <Badge colorScheme="green">On time</Badge>
+                                  )}
+                                </Td>
+                              </Tr>
+                            )
+                          })
+                        })()}
                       </Tbody>
                     </Table>
                   </TableContainer>
                 </Stack>
               </CardBody>
             </Card>
+
+            {/* Attributes editor */}
+            {selectedCustomer && (
+              <Card>
+                <CardBody>
+                  {(() => {
+                    // Prepare local state for attributes
+                    // The component-level state holders
+                    // NOTE: Using closures to avoid top-level state explosion; minimal implementation
+                    return (
+                      <AttributesEditor
+                        customer={selectedCustomer}
+                        onSave={(nextMap) => {
+                          // Update in customers list and selectedCustomer
+                          setCustRows(prev => prev.map(c => c.id === selectedCustomer.id ? { ...c, enrichment: nextMap } : c))
+                          setSelectedCustomer({ ...selectedCustomer, enrichment: nextMap })
+                        }}
+                      />
+                    )
+                  })()}
+                </CardBody>
+              </Card>
+            )}
           </Stack>
         </DrawerBody>
       </DrawerContent>
