@@ -476,6 +476,170 @@ export default function CompaniesTable() {
     setSelectedSnapshotDetail(null)
   }
 
+  // Transactions modal state and functions
+  type SnapshotTransaction = {
+    id: string
+    customerName: string
+    customerRef: string
+    amount: number
+    remaining: number
+    document: string
+    dueDate: string // ISO
+    status: 'open'
+    notified: boolean
+    type: 'Invoice' | 'Debit Adjustment' | 'Payment' | 'Credit Note' | 'Credit Adjustment'
+    documentDate: string // ISO
+    entryDate: string // ISO
+  }
+  const [transactionsSnapshot, setTransactionsSnapshot] = useState<Snapshot | null>(null)
+  const [snapshotTransactions, setSnapshotTransactions] = useState<SnapshotTransaction[]>([])
+
+  function generateTransactionsForSnapshot(s: Snapshot): SnapshotTransaction[] {
+    // Generate demo transactions based on the snapshot's newItemCount
+    const transactions: SnapshotTransaction[] = []
+    const loadDate = new Date(s.loadDate)
+
+    // Determine the distribution of transaction types based on snapshot data
+    const totalNewItems = s.newItemCount
+    const invoiceCount = Math.max(1, Math.round(totalNewItems * 0.6)) // 60% invoices
+    const creditCount = Math.max(0, Math.round(totalNewItems * 0.2)) // 20% credit notes
+    const paymentCount = Math.max(0, Math.round(totalNewItems * 0.1)) // 10% payments
+    const debitAdjCount = Math.max(0, Math.round(totalNewItems * 0.05)) // 5% debit adjustments
+    const creditAdjCount = Math.max(0, Math.round(totalNewItems * 0.05)) // 5% credit adjustments
+
+    // Generate invoices
+    for (let i = 0; i < invoiceCount; i++) {
+      const amount = Math.round((s.newInvoiceTotal / invoiceCount) * (0.8 + Math.random() * 0.4))
+      const dueDate = new Date(loadDate)
+      dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * 30) + 15) // Due in 15-45 days
+      const documentDate = new Date(loadDate)
+      documentDate.setDate(documentDate.getDate() - Math.floor(Math.random() * 5)) // Document date 0-5 days before load
+
+      transactions.push({
+        id: `TX-INV-${i + 1}`,
+        customerName: `Customer ${i + 1}`,
+        customerRef: `CUST-${1000 + i}`,
+        amount,
+        remaining: amount,
+        document: `INV-${10000 + i}`,
+        dueDate: dueDate.toISOString(),
+        status: 'open',
+        notified: Math.random() > 0.3, // 70% are notified
+        type: 'Invoice',
+        documentDate: documentDate.toISOString(),
+        entryDate: loadDate.toISOString()
+      })
+    }
+
+    // Generate credit notes
+    for (let i = 0; i < creditCount; i++) {
+      const amount = -Math.round((s.newCreditTotal / creditCount) * (0.8 + Math.random() * 0.4))
+      const dueDate = new Date(loadDate)
+      dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * 30)) // Due in 0-30 days
+      const documentDate = new Date(loadDate)
+      documentDate.setDate(documentDate.getDate() - Math.floor(Math.random() * 5)) // Document date 0-5 days before load
+
+      transactions.push({
+        id: `TX-CN-${i + 1}`,
+        customerName: `Customer ${Math.floor(Math.random() * invoiceCount) + 1}`, // Link to an existing customer
+        customerRef: `CUST-${1000 + Math.floor(Math.random() * invoiceCount)}`,
+        amount,
+        remaining: amount,
+        document: `CN-${20000 + i}`,
+        dueDate: dueDate.toISOString(),
+        status: 'open',
+        notified: Math.random() > 0.3, // 70% are notified
+        type: 'Credit Note',
+        documentDate: documentDate.toISOString(),
+        entryDate: loadDate.toISOString()
+      })
+    }
+
+    // Generate payments
+    for (let i = 0; i < paymentCount; i++) {
+      const amount = -Math.round((s.newPaymentTotal / paymentCount) * (0.8 + Math.random() * 0.4))
+      const documentDate = new Date(loadDate)
+      documentDate.setDate(documentDate.getDate() - Math.floor(Math.random() * 5)) // Document date 0-5 days before load
+
+      transactions.push({
+        id: `TX-PAY-${i + 1}`,
+        customerName: `Customer ${Math.floor(Math.random() * invoiceCount) + 1}`, // Link to an existing customer
+        customerRef: `CUST-${1000 + Math.floor(Math.random() * invoiceCount)}`,
+        amount,
+        remaining: amount,
+        document: `PAY-${30000 + i}`,
+        dueDate: loadDate.toISOString(), // Due immediately
+        status: 'open',
+        notified: Math.random() > 0.3, // 70% are notified
+        type: 'Payment',
+        documentDate: documentDate.toISOString(),
+        entryDate: loadDate.toISOString()
+      })
+    }
+
+    // Generate debit adjustments
+    for (let i = 0; i < debitAdjCount; i++) {
+      const amount = Math.round(1000 * (0.8 + Math.random() * 0.4))
+      const dueDate = new Date(loadDate)
+      dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * 30) + 15) // Due in 15-45 days
+      const documentDate = new Date(loadDate)
+      documentDate.setDate(documentDate.getDate() - Math.floor(Math.random() * 5)) // Document date 0-5 days before load
+
+      transactions.push({
+        id: `TX-DA-${i + 1}`,
+        customerName: `Customer ${Math.floor(Math.random() * invoiceCount) + 1}`, // Link to an existing customer
+        customerRef: `CUST-${1000 + Math.floor(Math.random() * invoiceCount)}`,
+        amount,
+        remaining: amount,
+        document: `DA-${40000 + i}`,
+        dueDate: dueDate.toISOString(),
+        status: 'open',
+        notified: Math.random() > 0.3, // 70% are notified
+        type: 'Debit Adjustment',
+        documentDate: documentDate.toISOString(),
+        entryDate: loadDate.toISOString()
+      })
+    }
+
+    // Generate credit adjustments
+    for (let i = 0; i < creditAdjCount; i++) {
+      const amount = -Math.round(500 * (0.8 + Math.random() * 0.4))
+      const dueDate = new Date(loadDate)
+      dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * 30)) // Due in 0-30 days
+      const documentDate = new Date(loadDate)
+      documentDate.setDate(documentDate.getDate() - Math.floor(Math.random() * 5)) // Document date 0-5 days before load
+
+      transactions.push({
+        id: `TX-CA-${i + 1}`,
+        customerName: `Customer ${Math.floor(Math.random() * invoiceCount) + 1}`, // Link to an existing customer
+        customerRef: `CUST-${1000 + Math.floor(Math.random() * invoiceCount)}`,
+        amount,
+        remaining: amount,
+        document: `CA-${50000 + i}`,
+        dueDate: dueDate.toISOString(),
+        status: 'open',
+        notified: Math.random() > 0.3, // 70% are notified
+        type: 'Credit Adjustment',
+        documentDate: documentDate.toISOString(),
+        entryDate: loadDate.toISOString()
+      })
+    }
+
+    return transactions
+  }
+
+  function openTransactionsModal(s: Snapshot) {
+    if (s.newItemCount > 0) {
+      setTransactionsSnapshot(s)
+      setSnapshotTransactions(generateTransactionsForSnapshot(s))
+    }
+  }
+
+  function closeTransactionsModal() {
+    setTransactionsSnapshot(null)
+    setSnapshotTransactions([])
+  }
+
   // Extract modal state and helpers
   const [extractSnapshot, setExtractSnapshot] = useState<Snapshot | null>(null)
   const [extractXML, setExtractXML] = useState<string>('')
@@ -809,6 +973,14 @@ export default function CompaniesTable() {
                               <HStack spacing={2}>
                                 <Button size="xs" onClick={(e) => { e.stopPropagation(); openExtractModal(s) }}>Extract File</Button>
                                 <Button size="xs" variant="outline" onClick={(e) => { e.stopPropagation(); openExportsModal(s) }}>Exports</Button>
+                                <Button 
+                                  size="xs" 
+                                  colorScheme="blue" 
+                                  isDisabled={s.newItemCount <= 0}
+                                  onClick={(e) => { e.stopPropagation(); openTransactionsModal(s) }}
+                                >
+                                  Transactions
+                                </Button>
                               </HStack>
                             </Td>
                           </Tr>
@@ -1065,6 +1237,70 @@ export default function CompaniesTable() {
         </ModalBody>
         <ModalFooter>
           <Button onClick={closeViewFile}>Close</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+
+    {/* Transactions modal */}
+    <Modal isOpen={!!transactionsSnapshot} onClose={closeTransactionsModal} size="xl">
+      <ModalOverlay />
+      <ModalContent maxH="90vh">
+        <ModalHeader>New Transactions — {snapshotTarget?.name || ''}</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody overflowY="auto" maxH="calc(90vh - 130px)">
+          {transactionsSnapshot && (
+            <Stack spacing={4}>
+              <Text fontSize="sm" color="gray.600">
+                Load date: {new Date(transactionsSnapshot.loadDate).toLocaleDateString('en-GB')} | 
+                New items: {transactionsSnapshot.newItemCount}
+              </Text>
+
+              <TableContainer>
+                <Table size="sm">
+                  <Thead>
+                    <Tr>
+                      <Th>Customer</Th>
+                      <Th>Type</Th>
+                      <Th>Document</Th>
+                      <Th>Document Date</Th>
+                      <Th>Entry Date</Th>
+                      <Th isNumeric>Amount</Th>
+                      <Th isNumeric>Remaining</Th>
+                      <Th>Due Date</Th>
+                      <Th>Notified</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {snapshotTransactions.map(tx => (
+                      <Tr key={tx.id} _hover={{ bg: 'gray.50' }}>
+                        <Td>
+                          <Text fontWeight="medium">{tx.customerName}</Text>
+                          <Text fontSize="xs" color="gray.500">{tx.customerRef}</Text>
+                        </Td>
+                        <Td>{tx.type}</Td>
+                        <Td>{tx.document}</Td>
+                        <Td>{new Date(tx.documentDate).toLocaleDateString('en-GB')}</Td>
+                        <Td>{new Date(tx.entryDate).toLocaleDateString('en-GB')}</Td>
+                        <Td isNumeric>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.amount)}</Td>
+                        <Td isNumeric>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.remaining)}</Td>
+                        <Td>{new Date(tx.dueDate).toLocaleDateString('en-GB')}</Td>
+                        <Td>{tx.notified ? 'Yes' : 'No'}</Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </TableContainer>
+
+              <Box p={4} bg="gray.50" borderRadius="md">
+                <Text fontSize="sm" fontStyle="italic">
+                  These are the new transactions that were added in this snapshot. Click on a row to see more details.
+                </Text>
+              </Box>
+            </Stack>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={closeTransactionsModal}>Close</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
