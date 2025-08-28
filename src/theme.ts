@@ -165,37 +165,37 @@ const components = {
     },
     variants: {
       solid: (props: any) => ({
-        bg: `${props.colorScheme}.500`,
+        bg: props.colorMode === 'dark' ? `${props.colorScheme}.600` : `${props.colorScheme}.500`,
         color: 'white',
         _hover: {
-          bg: `${props.colorScheme}.600`,
+          bg: props.colorMode === 'dark' ? `${props.colorScheme}.700` : `${props.colorScheme}.600`,
         },
         _active: {
-          bg: `${props.colorScheme}.700`,
+          bg: props.colorMode === 'dark' ? `${props.colorScheme}.800` : `${props.colorScheme}.700`,
         },
       }),
       outline: (props: any) => ({
         border: '1px solid',
-        borderColor: `${props.colorScheme}.500`,
-        color: `${props.colorScheme}.500`,
+        borderColor: props.colorMode === 'dark' ? `${props.colorScheme}.300` : `${props.colorScheme}.500`,
+        color: props.colorMode === 'dark' ? `${props.colorScheme}.200` : `${props.colorScheme}.500`,
         _hover: {
-          bg: `${props.colorScheme}.50`,
+          bg: props.colorMode === 'dark' ? `${props.colorScheme}.800` : `${props.colorScheme}.50`,
         },
         _active: {
-          bg: `${props.colorScheme}.100`,
+          bg: props.colorMode === 'dark' ? `${props.colorScheme}.700` : `${props.colorScheme}.100`,
         },
       }),
       ghost: (props: any) => ({
-        color: `${props.colorScheme}.500`,
+        color: props.colorMode === 'dark' ? `${props.colorScheme}.200` : `${props.colorScheme}.500`,
         _hover: {
-          bg: `${props.colorScheme}.50`,
+          bg: props.colorMode === 'dark' ? `${props.colorScheme}.800` : `${props.colorScheme}.50`,
         },
         _active: {
-          bg: `${props.colorScheme}.100`,
+          bg: props.colorMode === 'dark' ? `${props.colorScheme}.700` : `${props.colorScheme}.100`,
         },
       }),
       link: (props: any) => ({
-        color: `${props.colorScheme}.500`,
+        color: props.colorMode === 'dark' ? `${props.colorScheme}.200` : `${props.colorScheme}.500`,
         _hover: {
           textDecoration: 'underline',
         },

@@ -145,7 +145,7 @@ export default function App() {
         transition="all 0.2s"
         _hover={{
           transform: 'translateX(4px)',
-          bg: active ? undefined : 'gray.50'
+          bg: active ? undefined : colorMode === 'dark' ? 'gray.600' : 'gray.50'
         }}
         boxShadow={active ? 'md' : 'none'}
       >
@@ -572,8 +572,8 @@ export default function App() {
                 >
                   {currentUser}
                 </MenuButton>
-                <MenuList borderRadius="md" boxShadow="lg">
-                  <MenuItem onClick={handleLogout} _hover={{ bg: 'red.50', color: 'red.500' }}>Logout</MenuItem>
+                <MenuList borderRadius="md" boxShadow="lg" bg={colorMode === 'dark' ? 'gray.700' : 'white'} borderColor={colorMode === 'dark' ? 'gray.600' : 'gray.100'}>
+                  <MenuItem onClick={handleLogout} _hover={{ bg: colorMode === 'dark' ? 'red.900' : 'red.50', color: 'red.500' }}>Logout</MenuItem>
                 </MenuList>
               </Menu>
               <ColorModeToggle />
@@ -618,8 +618,8 @@ export default function App() {
               >
                 {currentUser}
               </MenuButton>
-              <MenuList borderRadius="md" boxShadow="lg">
-                <MenuItem onClick={handleLogout} _hover={{ bg: 'red.50', color: 'red.500' }}>Logout</MenuItem>
+              <MenuList borderRadius="md" boxShadow="lg" bg={colorMode === 'dark' ? 'gray.700' : 'white'} borderColor={colorMode === 'dark' ? 'gray.600' : 'gray.100'}>
+                <MenuItem onClick={handleLogout} _hover={{ bg: colorMode === 'dark' ? 'red.900' : 'red.50', color: 'red.500' }}>Logout</MenuItem>
               </MenuList>
             </Menu>
             <ColorModeToggle />
@@ -640,16 +640,16 @@ export default function App() {
           {showMenu && (
             <GridItem>
               <Card
-                bg="white"
+                bg={colorMode === 'dark' ? 'gray.700' : 'white'}
                 boxShadow="lg"
                 borderRadius="xl"
                 overflow="hidden"
                 borderWidth="1px"
-                borderColor="gray.100"
+                borderColor={colorMode === 'dark' ? 'gray.600' : 'gray.100'}
               >
                 <CardBody p={4}>
                   <VStack align="stretch" spacing={3}>
-                    <Text fontSize="sm" fontWeight="bold" color="brand.600" mb={2} textTransform="uppercase" letterSpacing="wider">Menu</Text>
+                    <Text fontSize="sm" fontWeight="bold" color={colorMode === 'dark' ? 'brand.200' : 'brand.600'} mb={2} textTransform="uppercase" letterSpacing="wider">Menu</Text>
                     <NavItem label="Companies" icon={ViewIcon} active={section==='Companies'} onClick={() => setSection('Companies')} />
                     <NavItem label="System" icon={SettingsIcon} active={section==='System'} onClick={() => setSection('System')} />
                     <NavItem label="User" icon={AtSignIcon} active={section==='User'} onClick={() => setSection('User')} />
