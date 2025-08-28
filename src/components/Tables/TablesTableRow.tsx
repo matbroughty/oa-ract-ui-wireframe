@@ -29,8 +29,9 @@ export default function TablesTableRow(props: CompanyRow & {
   onSelect?: (id: string) => void
   onRefresh?: (id: string) => void
   onSnapshot?: (id: string) => void
+  onChangeClick?: (id: string) => void
 }) {
-  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, notifiedSalesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, connector, loadStatus, hoverTitle, funding, hasBalanceChanged } = props
+  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, notifiedSalesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, onChangeClick, connector, loadStatus, hoverTitle, funding, hasBalanceChanged } = props
   const isCloud = status === 'cloud'
   const badgeColor = isCloud ? 'green' : 'gray'
   const connectorLabel = isCloud ? (connector === 'native' ? 'Native Cloud' : connector === 'codat' ? 'Codat' : connector === 'validis' ? 'Validis' : 'Cloud') : 'Desktop'
@@ -83,7 +84,19 @@ export default function TablesTableRow(props: CompanyRow & {
       </Td>
       <Td textAlign="center">
         {hasBalanceChanged ? (
-          <Text color="green.500" fontSize="xl">✓</Text>
+          <Tooltip label="Click to view transactions">
+            <Text 
+              color="green.500" 
+              fontSize="xl" 
+              cursor="pointer" 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                onChangeClick?.(id); 
+              }}
+            >
+              ✓
+            </Text>
+          </Tooltip>
         ) : (
           <Text color="gray.500">-</Text>
         )}

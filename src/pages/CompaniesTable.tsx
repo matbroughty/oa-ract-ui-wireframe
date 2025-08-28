@@ -491,14 +491,22 @@ export default function CompaniesTable() {
     type: 'Invoice' | 'Debit Adjustment' | 'Payment' | 'Credit Note' | 'Credit Adjustment'
     documentDate: string // ISO
     entryDate: string // ISO
+    changeStatus?: 'NEW' | 'CHANGED' | 'CLOSED'
+    accountType?: 'sales' | 'purchase'
   }
   const [transactionsSnapshot, setTransactionsSnapshot] = useState<Snapshot | null>(null)
   const [snapshotTransactions, setSnapshotTransactions] = useState<SnapshotTransaction[]>([])
+
+  // Change transactions modal state
+  const [changeTransactionsOpen, setChangeTransactionsOpen] = useState(false)
+  const [changeTransactions, setChangeTransactions] = useState<SnapshotTransaction[]>([])
 
   function generateTransactionsForSnapshot(s: Snapshot): SnapshotTransaction[] {
     // Generate demo transactions based on the snapshot's newItemCount
     const transactions: SnapshotTransaction[] = []
     const loadDate = new Date(s.loadDate)
+
+    // For change transactions, we'll determine account type and change status
 
     // Determine the distribution of transaction types based on snapshot data
     const totalNewItems = s.newItemCount
@@ -528,7 +536,9 @@ export default function CompaniesTable() {
         notified: Math.random() > 0.3, // 70% are notified
         type: 'Invoice',
         documentDate: documentDate.toISOString(),
-        entryDate: loadDate.toISOString()
+        entryDate: loadDate.toISOString(),
+        changeStatus: Math.random() > 0.7 ? 'NEW' : Math.random() > 0.5 ? 'CHANGED' : 'CLOSED',
+        accountType: 'sales'
       })
     }
 
@@ -552,7 +562,9 @@ export default function CompaniesTable() {
         notified: Math.random() > 0.3, // 70% are notified
         type: 'Credit Note',
         documentDate: documentDate.toISOString(),
-        entryDate: loadDate.toISOString()
+        entryDate: loadDate.toISOString(),
+        changeStatus: Math.random() > 0.7 ? 'NEW' : Math.random() > 0.5 ? 'CHANGED' : 'CLOSED',
+        accountType: 'sales'
       })
     }
 
@@ -574,7 +586,9 @@ export default function CompaniesTable() {
         notified: Math.random() > 0.3, // 70% are notified
         type: 'Payment',
         documentDate: documentDate.toISOString(),
-        entryDate: loadDate.toISOString()
+        entryDate: loadDate.toISOString(),
+        changeStatus: Math.random() > 0.7 ? 'NEW' : Math.random() > 0.5 ? 'CHANGED' : 'CLOSED',
+        accountType: Math.random() > 0.5 ? 'sales' : 'purchase'
       })
     }
 
@@ -598,7 +612,9 @@ export default function CompaniesTable() {
         notified: Math.random() > 0.3, // 70% are notified
         type: 'Debit Adjustment',
         documentDate: documentDate.toISOString(),
-        entryDate: loadDate.toISOString()
+        entryDate: loadDate.toISOString(),
+        changeStatus: Math.random() > 0.7 ? 'NEW' : Math.random() > 0.5 ? 'CHANGED' : 'CLOSED',
+        accountType: 'sales'
       })
     }
 
@@ -622,7 +638,9 @@ export default function CompaniesTable() {
         notified: Math.random() > 0.3, // 70% are notified
         type: 'Credit Adjustment',
         documentDate: documentDate.toISOString(),
-        entryDate: loadDate.toISOString()
+        entryDate: loadDate.toISOString(),
+        changeStatus: Math.random() > 0.7 ? 'NEW' : Math.random() > 0.5 ? 'CHANGED' : 'CLOSED',
+        accountType: 'sales'
       })
     }
 
@@ -639,6 +657,31 @@ export default function CompaniesTable() {
   function closeTransactionsModal() {
     setTransactionsSnapshot(null)
     setSnapshotTransactions([])
+  }
+
+  // Function to handle the change click event
+  function handleChangeClick(id: string) {
+    const row = data.find(d => d.id === id)
+    if (!row || !hasBalanceChanged(row)) return
+
+    // Get the latest snapshot for this company
+    const snaps = makeSnapshots(row)
+    if (snaps.length === 0) return
+
+    const latestSnapshot = snaps[0]
+
+    // Generate transactions for this snapshot
+    const transactions = generateTransactionsForSnapshot(latestSnapshot)
+
+    // Set the transactions and open the modal
+    setChangeTransactions(transactions)
+    setChangeTransactionsOpen(true)
+  }
+
+  // Function to close the change transactions modal
+  function closeChangeTransactionsModal() {
+    setChangeTransactionsOpen(false)
+    setChangeTransactions([])
   }
 
   // Extract modal state and helpers
@@ -808,6 +851,7 @@ export default function CompaniesTable() {
                   onSelect={(id) => { setSelectedId(id); onOpen(); }}
                   onRefresh={(id) => handleRefreshClick(id)}
                   onSnapshot={(id) => handleSnapshotClick(id)}
+                  onChangeClick={(id) => handleChangeClick(id)}
                 />
               ))}
             </Tbody>
@@ -1405,6 +1449,107 @@ export default function CompaniesTable() {
         funding={(data.find(d => d.id === selectedId) ? getFunding(data.find(d => d.id === selectedId) as CompanyRow) : undefined)}
       />
     )}
+    {/* Change Transactions Modal */}
+    <Modal isOpen={changeTransactionsOpen} onClose={closeChangeTransactionsModal} size="xl">
+      <ModalOverlay />
+      <ModalContent maxH="90vh">
+        <ModalHeader>Transactions with Changes</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody overflowY="auto" maxH="calc(90vh - 130px)">
+          <Stack spacing={4}>
+            <HStack justify="space-between">
+              <Text fontSize="sm" color="gray.600">
+                Showing transactions that were added, changed, or closed
+              </Text>
+              <ExportButton 
+                data={changeTransactions}
+                filename={`change_transactions.csv`}
+                headers={[
+                  { key: 'customerName', label: 'Customer' },
+                  { key: 'customerRef', label: 'Customer Reference' },
+                  { key: 'type', label: 'Type' },
+                  { key: 'document', label: 'Document' },
+                  { key: 'documentDate', label: 'Document Date' },
+                  { key: 'entryDate', label: 'Entry Date' },
+                  { key: 'amount', label: 'Amount' },
+                  { key: 'remaining', label: 'Remaining' },
+                  { key: 'dueDate', label: 'Due Date' },
+                  { key: 'notified', label: 'Notified' },
+                  { key: 'changeStatus', label: 'Status' },
+                  { key: 'accountType', label: 'Account Type' }
+                ]}
+                size="sm"
+              />
+            </HStack>
+
+            <TableContainer>
+              <Table size="sm">
+                <Thead>
+                  <Tr>
+                    <Th>Customer</Th>
+                    <Th>Type</Th>
+                    <Th>Document</Th>
+                    <Th>Document Date</Th>
+                    <Th>Entry Date</Th>
+                    <Th isNumeric>Amount</Th>
+                    <Th isNumeric>Remaining</Th>
+                    <Th>Due Date</Th>
+                    <Th>Notified</Th>
+                    <Th>Status</Th>
+                    <Th>Account Type</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {changeTransactions.map(tx => (
+                    <Tr key={tx.id} _hover={{ bg: 'gray.50' }}>
+                      <Td>
+                        <Text fontWeight="medium">{tx.customerName}</Text>
+                        <Text fontSize="xs" color="gray.500">{tx.customerRef}</Text>
+                      </Td>
+                      <Td>{tx.type}</Td>
+                      <Td>{tx.document}</Td>
+                      <Td>{new Date(tx.documentDate).toLocaleDateString('en-GB')}</Td>
+                      <Td>{new Date(tx.entryDate).toLocaleDateString('en-GB')}</Td>
+                      <Td isNumeric>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.amount)}</Td>
+                      <Td isNumeric>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.remaining)}</Td>
+                      <Td>{new Date(tx.dueDate).toLocaleDateString('en-GB')}</Td>
+                      <Td>{tx.notified ? 'Yes' : 'No'}</Td>
+                      <Td>
+                        <Badge 
+                          colorScheme={
+                            tx.changeStatus === 'NEW' ? 'green' : 
+                            tx.changeStatus === 'CHANGED' ? 'blue' : 
+                            'red'
+                          }
+                        >
+                          {tx.changeStatus}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <Badge 
+                          colorScheme={tx.accountType === 'sales' ? 'purple' : 'orange'}
+                        >
+                          {tx.accountType}
+                        </Badge>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </TableContainer>
+
+            <Box p={4} bg="gray.50" borderRadius="md">
+              <Text fontSize="sm" fontStyle="italic">
+                These are the transactions that were added, changed, or closed as part of the load.
+              </Text>
+            </Box>
+          </Stack>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={closeChangeTransactionsModal}>Close</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
     </>
   )
 }
