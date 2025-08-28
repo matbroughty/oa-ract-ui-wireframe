@@ -1,5 +1,6 @@
 import { Card, CardBody, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Icon, Input, InputGroup, InputLeftElement, HStack, Box, Text, Flex, Button, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, FormControl, FormLabel, useToast, IconButton, Tooltip } from '@chakra-ui/react'
-import { TriangleDownIcon, TriangleUpIcon, SearchIcon, AddIcon, EditIcon, DeleteIcon } from '@chakra-ui/icons'
+import { TriangleDownIcon, TriangleUpIcon, SearchIcon, AddIcon, EditIcon, DeleteIcon, DownloadIcon } from '@chakra-ui/icons'
+import ExportButton from '../Common/ExportButton'
 import { useMemo, useState } from 'react'
 import { configOptions, ConfigOption } from '../../data/configOptions'
 
@@ -28,7 +29,7 @@ export default function ConfigurationOptionsTable() {
   const [sortKey, setSortKey] = useState<SortKey>('lastUpdated')
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc')
   const [localSearch, setLocalSearch] = useState('')
-  
+
   // Add/Edit modal state
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [isEditing, setIsEditing] = useState(false)
@@ -36,7 +37,7 @@ export default function ConfigurationOptionsTable() {
   const [name, setName] = useState<string>('')
   const [value, setValue] = useState<string>('')
   const [description, setDescription] = useState<string>('')
-  
+
   // Delete confirmation modal state
   const deleteModal = useDisclosure()
   const [optionToDelete, setOptionToDelete] = useState<ConfigOption | null>(null)
@@ -124,7 +125,7 @@ export default function ConfigurationOptionsTable() {
     }
 
     const now = new Date().toISOString()
-    
+
     if (isEditing && currentOption) {
       // Update existing option
       setData(prev => prev.map(r => r.id === currentOption.id ? {
@@ -134,7 +135,7 @@ export default function ConfigurationOptionsTable() {
         description,
         lastUpdated: now
       } : r))
-      
+
       toast({
         title: 'Configuration option updated',
         status: 'success',
@@ -144,7 +145,7 @@ export default function ConfigurationOptionsTable() {
     } else {
       // Add new option
       const newId = String(Math.max(0, ...data.map(d => Number(d.id) || 0)) + 1)
-      
+
       setData(prev => [...prev, {
         id: newId,
         name,
@@ -152,7 +153,7 @@ export default function ConfigurationOptionsTable() {
         description,
         lastUpdated: now
       }])
-      
+
       toast({
         title: 'Configuration option added',
         status: 'success',
@@ -160,7 +161,7 @@ export default function ConfigurationOptionsTable() {
         isClosable: true,
       })
     }
-    
+
     onClose()
   }
 
@@ -188,6 +189,17 @@ export default function ConfigurationOptionsTable() {
             <Button colorScheme="blue" leftIcon={<AddIcon />} size="sm" onClick={handleAddClick}>
               Add Option
             </Button>
+            <ExportButton 
+              data={sorted}
+              filename="configuration_options.csv"
+              headers={[
+                { key: 'name', label: 'Name' },
+                { key: 'value', label: 'Value' },
+                { key: 'description', label: 'Description' },
+                { key: 'lastUpdated', label: 'Last Updated' }
+              ]}
+              size="sm"
+            />
           </HStack>
           <Box flex="1">
             <InputGroup maxW="320px" ml="auto">

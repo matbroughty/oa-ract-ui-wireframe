@@ -1,6 +1,7 @@
 
 import { Card, CardBody, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Icon, Input, InputGroup, InputLeftElement, HStack, Box, Text, Flex, useDisclosure, Button, Link, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, useClipboard, Stack, Checkbox, Select, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, Badge, Divider, useToast, Tooltip } from '@chakra-ui/react'
-import { TriangleDownIcon, TriangleUpIcon, SearchIcon, AddIcon } from '@chakra-ui/icons'
+import { TriangleDownIcon, TriangleUpIcon, SearchIcon, AddIcon, DownloadIcon } from '@chakra-ui/icons'
+import ExportButton from '../components/Common/ExportButton'
 import { useMemo, useState } from 'react'
 import TablesTableRow, { CompanyRow } from '../components/Tables/TablesTableRow'
 import { companies as seedCompanies } from '../data/companies'
@@ -741,12 +742,27 @@ export default function CompaniesTable() {
             </Button>
           </Box>
           <Box flex="2" textAlign="right">
-            <InputGroup maxW="320px" ml="auto">
-              <InputLeftElement pointerEvents="none">
-                <Icon as={SearchIcon} />
-              </InputLeftElement>
-              <Input placeholder="Search by name or reference…" value={localSearch} onChange={e => setLocalSearch(e.target.value)} />
-            </InputGroup>
+            <HStack spacing={4} justifyContent="flex-end">
+              <ExportButton 
+                data={sorted}
+                filename="companies.csv"
+                headers={[
+                  { key: 'name', label: 'Company' },
+                  { key: 'reference', label: 'Reference' },
+                  { key: 'lastLoadDate', label: 'Last Load Date' },
+                  { key: 'salesBalanceGBP', label: 'Sales Balance' },
+                  { key: 'notifiedSalesBalanceGBP', label: 'Notified Sales Balance' },
+                  { key: 'purchaseBalanceGBP', label: 'Purchase Balance' },
+                  { key: 'status', label: 'Status' }
+                ]}
+              />
+              <InputGroup maxW="320px">
+                <InputLeftElement pointerEvents="none">
+                  <Icon as={SearchIcon} />
+                </InputLeftElement>
+                <Input placeholder="Search by name or reference…" value={localSearch} onChange={e => setLocalSearch(e.target.value)} />
+              </InputGroup>
+            </HStack>
           </Box>
         </Flex>
         <TableContainer overflowX="auto">
@@ -905,6 +921,20 @@ export default function CompaniesTable() {
                   <HStack justify="space-between" align="center">
                     <Text fontWeight="semibold">Snapshot History</Text>
                     <HStack spacing={3}>
+                      <ExportButton 
+                        data={sortedFilteredSnapshots}
+                        filename={`snapshots_${snapshotTarget?.name.replace(/\s+/g, '_').toLowerCase() || 'company'}.csv`}
+                        headers={[
+                          { key: 'loadDate', label: 'Load Date' },
+                          { key: 'salesBalance', label: 'Sales Ledger Balance' },
+                          { key: 'previousBalance', label: 'Previous Balance' },
+                          { key: 'newItemCount', label: 'New Item Count' },
+                          { key: 'newInvoiceTotal', label: 'New Invoice Total' },
+                          { key: 'newCreditTotal', label: 'New Credit Note Total' },
+                          { key: 'newPaymentTotal', label: 'New Payment Total' }
+                        ]}
+                        size="sm"
+                      />
                       <Input type="date" size="sm" value={snapFromDate} onChange={(e) => setSnapFromDate(e.target.value)} />
                       <Input type="date" size="sm" value={snapToDate} onChange={(e) => setSnapToDate(e.target.value)} />
                       <Button size="sm" onClick={() => { setSnapFromDate(''); setSnapToDate('') }}>Clear</Button>
@@ -1250,10 +1280,29 @@ export default function CompaniesTable() {
         <ModalBody overflowY="auto" maxH="calc(90vh - 130px)">
           {transactionsSnapshot && (
             <Stack spacing={4}>
-              <Text fontSize="sm" color="gray.600">
-                Load date: {new Date(transactionsSnapshot.loadDate).toLocaleDateString('en-GB')} | 
-                New items: {transactionsSnapshot.newItemCount}
-              </Text>
+              <HStack justify="space-between">
+                <Text fontSize="sm" color="gray.600">
+                  Load date: {new Date(transactionsSnapshot.loadDate).toLocaleDateString('en-GB')} | 
+                  New items: {transactionsSnapshot.newItemCount}
+                </Text>
+                <ExportButton 
+                  data={snapshotTransactions}
+                  filename={`transactions_${snapshotTarget?.name.replace(/\s+/g, '_').toLowerCase() || 'company'}_${new Date(transactionsSnapshot.loadDate).toISOString().slice(0,10)}.csv`}
+                  headers={[
+                    { key: 'customerName', label: 'Customer' },
+                    { key: 'customerRef', label: 'Customer Reference' },
+                    { key: 'type', label: 'Type' },
+                    { key: 'document', label: 'Document' },
+                    { key: 'documentDate', label: 'Document Date' },
+                    { key: 'entryDate', label: 'Entry Date' },
+                    { key: 'amount', label: 'Amount' },
+                    { key: 'remaining', label: 'Remaining' },
+                    { key: 'dueDate', label: 'Due Date' },
+                    { key: 'notified', label: 'Notified' }
+                  ]}
+                  size="sm"
+                />
+              </HStack>
 
               <TableContainer>
                 <Table size="sm">

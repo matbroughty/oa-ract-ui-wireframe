@@ -1,5 +1,6 @@
-import { Card, CardBody, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Icon, Input, InputGroup, InputLeftElement, HStack, Box, Text, Flex, Badge } from '@chakra-ui/react'
-import { TriangleDownIcon, TriangleUpIcon, SearchIcon } from '@chakra-ui/icons'
+import { Card, CardBody, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Icon, Input, InputGroup, InputLeftElement, HStack, Box, Text, Flex, Badge, Spinner, Progress } from '@chakra-ui/react'
+import { TriangleDownIcon, TriangleUpIcon, SearchIcon, DownloadIcon } from '@chakra-ui/icons'
+import ExportButton from '../Common/ExportButton'
 import { useMemo, useState } from 'react'
 import { extractFiles, ExtractFile } from '../../data/extractFiles'
 
@@ -30,14 +31,19 @@ export default function ExtractFilesTable() {
 
   const searchTerm = localSearch.trim().toLowerCase()
 
+  // Filter to only show QUEUED and LOADING items
+  const queuedAndLoading = useMemo(() => {
+    return data.filter(d => d.status === 'queued' || d.status === 'loading')
+  }, [data])
+
   const filtered = useMemo(() => {
-    if (!searchTerm) return data
-    return data.filter(d => 
+    if (!searchTerm) return queuedAndLoading
+    return queuedAndLoading.filter(d => 
       d.companyName.toLowerCase().includes(searchTerm) ||
       d.connector.toLowerCase().includes(searchTerm) ||
       d.status.toLowerCase().includes(searchTerm)
     )
-  }, [data, searchTerm])
+  }, [queuedAndLoading, searchTerm])
 
   const sorted = useMemo(() => sortData(filtered, sortKey, sortDir), [filtered, sortKey, sortDir])
 
@@ -82,6 +88,19 @@ export default function ExtractFilesTable() {
     }
   }
 
+  // Calculate wait time in minutes
+  function calculateWaitTime(receivedDate: string): number {
+    const received = new Date(receivedDate).getTime()
+    const now = new Date().getTime()
+    return Math.floor((now - received) / (1000 * 60))
+  }
+
+  // Calculate progress percentage
+  const totalItems = data.filter(d => d.status === 'queued' || d.status === 'loading').length
+  const loadingItems = data.filter(d => d.status === 'loading').length
+  const queuedItems = data.filter(d => d.status === 'queued').length
+  const progressPercentage = totalItems > 0 ? ((totalItems - queuedItems) / totalItems) * 100 : 100
+
   return (
     <Card>
       <CardBody>
@@ -90,14 +109,35 @@ export default function ExtractFilesTable() {
             <Text fontWeight="semibold">Waiting Extract Files ({sorted.length})</Text>
           </Box>
           <Box flex="1">
-            <InputGroup maxW="320px" ml="auto">
-              <InputLeftElement pointerEvents="none">
-                <Icon as={SearchIcon} />
-              </InputLeftElement>
-              <Input placeholder="Search by company, connector, or status…" value={localSearch} onChange={e => setLocalSearch(e.target.value)} />
-            </InputGroup>
+            <HStack spacing={4} justifyContent="flex-end">
+              <ExportButton 
+                data={sorted}
+                filename="extract_files.csv"
+                headers={[
+                  { key: 'companyName', label: 'Company' },
+                  { key: 'connector', label: 'Connector' },
+                  { key: 'receivedDate', label: 'Received Date' },
+                  { key: 'status', label: 'Status' },
+                  { key: 'size', label: 'Size' },
+                  { key: 'waitTime', label: 'Wait Time (min)' }
+                ]}
+                size="sm"
+              />
+              <InputGroup maxW="320px">
+                <InputLeftElement pointerEvents="none">
+                  <Icon as={SearchIcon} />
+                </InputLeftElement>
+                <Input placeholder="Search by company, connector, or status…" value={localSearch} onChange={e => setLocalSearch(e.target.value)} />
+              </InputGroup>
+            </HStack>
           </Box>
         </Flex>
+
+        {/* Progress bar showing how far through the queued list the system has got */}
+        <Box mb={4}>
+          <Text fontSize="sm" mb={1}>Processing progress: {Math.round(progressPercentage)}%</Text>
+          <Progress value={progressPercentage} size="sm" colorScheme="blue" borderRadius="md" />
+        </Box>
         <TableContainer overflowX="auto">
           <Table size="md" variant="simple">
             <Thead>
@@ -106,7 +146,8 @@ export default function ExtractFilesTable() {
                 <SortHeader label="Connector" k="connector" />
                 <SortHeader label="Received Date" k="receivedDate" />
                 <SortHeader label="Status" k="status" />
-                <Th>Error Message</Th>
+                <Th>Size</Th>
+                <Th>Wait Time (min)</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -122,12 +163,20 @@ export default function ExtractFilesTable() {
                     <Text>{new Date(row.receivedDate).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</Text>
                   </Td>
                   <Td>
-                    <Badge colorScheme={statusColor(row.status)} variant="subtle">{row.status}</Badge>
+                    {row.status === 'loading' ? (
+                      <HStack>
+                        <Spinner size="sm" color="blue.500" />
+                        <Badge colorScheme={statusColor(row.status)} variant="subtle">loading</Badge>
+                      </HStack>
+                    ) : (
+                      <Badge colorScheme={statusColor(row.status)} variant="subtle">{row.status}</Badge>
+                    )}
                   </Td>
                   <Td>
-                    {row.status === 'failed' && row.errorMessage && (
-                      <Text color="red.500">{row.errorMessage}</Text>
-                    )}
+                    <Badge colorScheme="gray" variant="subtle">{row.size}</Badge>
+                  </Td>
+                  <Td>
+                    <Text>{calculateWaitTime(row.receivedDate)}</Text>
                   </Td>
                 </Tr>
               ))}

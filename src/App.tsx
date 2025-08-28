@@ -64,7 +64,7 @@ export default function App() {
   })()
 
   type Section = 'Companies' | 'System' | 'User' | 'Recent Activity' | 'Survey'
-  type SystemSubSection = 'Main' | 'ExtractFiles' | 'ExchangeRates' | 'ConfigOptions'
+  type SystemSubSection = 'Main' | 'ExtractFiles' | 'ExchangeRates' | 'ConfigOptions' | 'SystemSummary'
   const [systemSubSection, setSystemSubSection] = useState<SystemSubSection>('Main')
   const [section, setSection] = useState<Section>('Companies')
   const [showMenu, setShowMenu] = useState(false)
@@ -114,7 +114,7 @@ export default function App() {
       <Stack spacing={6}>
         {/* KPI / Metrics Row */}
         <Box px={{ base: 3, md: 4 }}>
-          <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap={4}>
+          <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(5, 1fr)' }} gap={4}>
             {metrics.slice(0, 3).map((m) => (
               <GridItem key={m.id}>
                 <StatCard label={m.label} value={m.value} changePct={m.changePct} trend={m.trend} helperText={m.helperText} />
@@ -123,12 +123,25 @@ export default function App() {
             <GridItem>
               <StatCard 
                 label="Queued Companies" 
-                value={String(queuedCount)} 
+                value={queuedCount.toString()} 
                 helperText="awaiting load" 
                 subText={lastQueuedLoadSubText} 
                 onClick={() => { 
                   setSection('System'); 
                   setSystemSubSection('ExtractFiles'); 
+                  setShowMenu(true); 
+                }} 
+              />
+            </GridItem>
+            <GridItem>
+              <StatCard 
+                label="System Summary" 
+                value="234" 
+                helperText="Company Loads today" 
+                subText="678 Funding Exports, £650,987.12 Notified Invoices, 12 New Customers" 
+                onClick={() => { 
+                  setSection('System'); 
+                  setSystemSubSection('SystemSummary'); 
                   setShowMenu(true); 
                 }} 
               />
@@ -154,6 +167,135 @@ export default function App() {
 
     if (systemSubSection === 'ConfigOptions') {
       return <ConfigurationOptionsView onBack={() => setSystemSubSection('Main')} />
+    }
+
+    if (systemSubSection === 'SystemSummary') {
+      return (
+        <Card borderRadius="xl" boxShadow="lg" borderColor="blue.100" borderWidth="1px" overflow="hidden">
+          <Box position="absolute" top="0" left="0" right="0" h="4px" bgGradient="linear(to-r, blue.400, purple.500)" />
+          <CardBody p={6}>
+            <Stack spacing={5}>
+              <Flex align="center" justify="space-between">
+                <HStack spacing={3}>
+                  <Icon as={InfoIcon} color="blue.500" boxSize={6} />
+                  <Heading size="md" bgGradient="linear(to-r, blue.500, purple.600)" bgClip="text">System Summary</Heading>
+                </HStack>
+                <Button 
+                  size="sm" 
+                  onClick={() => setSystemSubSection('Main')}
+                  colorScheme="blue"
+                  variant="outline"
+                  borderRadius="full"
+                  leftIcon={<Icon as={ChevronDownIcon} transform="rotate(90deg)" />}
+                >
+                  Back to System
+                </Button>
+              </Flex>
+              <Divider />
+              <Box 
+                p={4} 
+                bg="blue.50" 
+                borderRadius="lg" 
+                borderLeft="4px solid" 
+                borderColor="blue.400"
+              >
+                <Text color="gray.700" fontWeight="medium">
+                  This panel shows a summary of system activity including company loads, funding exports, notified invoices, and new customers.
+                </Text>
+              </Box>
+              <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }} gap={5} mt={2}>
+                <GridItem>
+                  <StatCard 
+                    label="Company Loads" 
+                    value="234" 
+                    helperText="received today" 
+                    subText="Last load: 15 minutes ago"
+                  />
+                </GridItem>
+                <GridItem>
+                  <StatCard 
+                    label="Funding Exports" 
+                    value="678" 
+                    helperText="processed today" 
+                    subText="£1.2M total value"
+                  />
+                </GridItem>
+                <GridItem>
+                  <StatCard 
+                    label="Notified Invoices" 
+                    value="£650,987.12" 
+                    helperText="new today" 
+                    subText="42 invoices processed"
+                  />
+                </GridItem>
+                <GridItem>
+                  <StatCard 
+                    label="New Customers" 
+                    value="12" 
+                    helperText="added today" 
+                    subText="3 pending verification"
+                  />
+                </GridItem>
+              </Grid>
+
+              {/* Additional system metrics */}
+              <Box mt={4}>
+                <Heading size="sm" mb={4} color="gray.700">System Performance Metrics</Heading>
+                <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={4}>
+                  <GridItem>
+                    <HStack 
+                      p={4} 
+                      bg="white" 
+                      borderRadius="lg" 
+                      borderWidth="1px" 
+                      borderColor="gray.200"
+                      boxShadow="sm"
+                    >
+                      <Icon as={TimeIcon} boxSize={5} color="purple.500" />
+                      <Box>
+                        <Text fontWeight="medium" fontSize="sm">Average Response Time</Text>
+                        <Text fontWeight="bold" color="purple.600">1.2 seconds</Text>
+                      </Box>
+                    </HStack>
+                  </GridItem>
+                  <GridItem>
+                    <HStack 
+                      p={4} 
+                      bg="white" 
+                      borderRadius="lg" 
+                      borderWidth="1px" 
+                      borderColor="gray.200"
+                      boxShadow="sm"
+                    >
+                      <Icon as={ViewIcon} boxSize={5} color="teal.500" />
+                      <Box>
+                        <Text fontWeight="medium" fontSize="sm">System Uptime</Text>
+                        <Text fontWeight="bold" color="teal.600">99.98%</Text>
+                      </Box>
+                    </HStack>
+                  </GridItem>
+                  <GridItem>
+                    <HStack 
+                      p={4} 
+                      bg="white" 
+                      borderRadius="lg" 
+                      borderWidth="1px" 
+                      borderColor="gray.200"
+                      boxShadow="sm"
+                    >
+                      <Icon as={AtSignIcon} boxSize={5} color="orange.500" />
+                      <Box>
+                        <Text fontWeight="medium" fontSize="sm">Active Users</Text>
+                        <Text fontWeight="bold" color="orange.600">87</Text>
+                      </Box>
+                    </HStack>
+                  </GridItem>
+                </Grid>
+              </Box>
+            </Stack>
+          </CardBody>
+        </Card>
+      )
     }
 
     return (

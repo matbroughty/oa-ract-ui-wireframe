@@ -1,5 +1,6 @@
 import { Card, CardBody, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Icon, Input, InputGroup, InputLeftElement, HStack, Box, Text, Flex, Badge, Button, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, FormControl, FormLabel, Select, useToast, IconButton, Tooltip } from '@chakra-ui/react'
-import { TriangleDownIcon, TriangleUpIcon, SearchIcon, AddIcon, EditIcon, DeleteIcon } from '@chakra-ui/icons'
+import { TriangleDownIcon, TriangleUpIcon, SearchIcon, AddIcon, EditIcon, DeleteIcon, DownloadIcon } from '@chakra-ui/icons'
+import ExportButton from '../Common/ExportButton'
 import { useMemo, useState } from 'react'
 import { exchangeRates, ExchangeRate } from '../../data/exchangeRates'
 import { currencyCodes, CurrencyCode } from '../../data/currencies'
@@ -29,7 +30,7 @@ export default function ExchangeRatesTable() {
   const [sortKey, setSortKey] = useState<SortKey>('lastUpdated')
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc')
   const [localSearch, setLocalSearch] = useState('')
-  
+
   // Add/Edit modal state
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [isEditing, setIsEditing] = useState(false)
@@ -38,11 +39,11 @@ export default function ExchangeRatesTable() {
   const [toCurrency, setToCurrency] = useState<CurrencyCode>('USD')
   const [rate, setRate] = useState<string>('1.0')
   const [source, setSource] = useState<'manual' | 'lendscape' | 'openexchangerates'>('manual')
-  
+
   // Import modal state
   const importModal = useDisclosure()
   const [importSource, setImportSource] = useState<'lendscape' | 'openexchangerates'>('lendscape')
-  
+
   // Delete confirmation modal state
   const deleteModal = useDisclosure()
   const [rateToDelete, setRateToDelete] = useState<ExchangeRate | null>(null)
@@ -133,7 +134,7 @@ export default function ExchangeRatesTable() {
     }
 
     const now = new Date().toISOString()
-    
+
     if (isEditing && currentRate) {
       // Update existing rate
       setData(prev => prev.map(r => r.id === currentRate.id ? {
@@ -144,7 +145,7 @@ export default function ExchangeRatesTable() {
         lastUpdated: now,
         source
       } : r))
-      
+
       toast({
         title: 'Exchange rate updated',
         status: 'success',
@@ -154,7 +155,7 @@ export default function ExchangeRatesTable() {
     } else {
       // Add new rate
       const newId = String(Math.max(0, ...data.map(d => Number(d.id) || 0)) + 1)
-      
+
       setData(prev => [...prev, {
         id: newId,
         fromCurrency,
@@ -163,7 +164,7 @@ export default function ExchangeRatesTable() {
         lastUpdated: now,
         source
       }])
-      
+
       toast({
         title: 'Exchange rate added',
         status: 'success',
@@ -171,7 +172,7 @@ export default function ExchangeRatesTable() {
         isClosable: true,
       })
     }
-    
+
     onClose()
   }
 
@@ -179,19 +180,19 @@ export default function ExchangeRatesTable() {
     // Simulate importing exchange rates
     const now = new Date().toISOString()
     const newRates: ExchangeRate[] = []
-    
+
     // Generate some random rates for demonstration
     if (importSource === 'lendscape') {
       // Simulate Lendscape import with 3 new rates
       const baseCurrencies = ['GBP', 'USD', 'EUR']
       const targetCurrencies = ['JPY', 'CAD', 'AUD']
-      
+
       for (let i = 0; i < 3; i++) {
         const newId = String(Math.max(0, ...data.map(d => Number(d.id) || 0)) + i + 1)
         const fromCurrency = baseCurrencies[i] as CurrencyCode
         const toCurrency = targetCurrencies[i] as CurrencyCode
         const rate = Math.round((1 + Math.random() * 2) * 100) / 100
-        
+
         newRates.push({
           id: newId,
           fromCurrency,
@@ -205,13 +206,13 @@ export default function ExchangeRatesTable() {
       // Simulate OpenExchangeRates import with 3 new rates
       const baseCurrencies = ['USD', 'EUR', 'GBP']
       const targetCurrencies = ['CHF', 'SEK', 'NOK']
-      
+
       for (let i = 0; i < 3; i++) {
         const newId = String(Math.max(0, ...data.map(d => Number(d.id) || 0)) + i + 1)
         const fromCurrency = baseCurrencies[i] as CurrencyCode
         const toCurrency = targetCurrencies[i] as CurrencyCode
         const rate = Math.round((0.5 + Math.random() * 1.5) * 100) / 100
-        
+
         newRates.push({
           id: newId,
           fromCurrency,
@@ -222,17 +223,17 @@ export default function ExchangeRatesTable() {
         })
       }
     }
-    
+
     // Add new rates to the data
     setData(prev => {
       // Filter out any existing rates with the same currency pairs
       const filtered = prev.filter(r => !newRates.some(nr => 
         nr.fromCurrency === r.fromCurrency && nr.toCurrency === r.toCurrency
       ))
-      
+
       return [...filtered, ...newRates]
     })
-    
+
     toast({
       title: 'Exchange rates imported',
       description: `Successfully imported ${newRates.length} rates from ${importSource === 'lendscape' ? 'Lendscape RF' : 'openexchangerates.org'}`,
@@ -240,7 +241,7 @@ export default function ExchangeRatesTable() {
       duration: 3000,
       isClosable: true,
     })
-    
+
     importModal.onClose()
   }
 
@@ -298,6 +299,18 @@ export default function ExchangeRatesTable() {
             <Button colorScheme="blue" leftIcon={<AddIcon />} size="sm" onClick={handleAddClick}>
               Add Rate
             </Button>
+            <ExportButton 
+              data={sorted}
+              filename="exchange_rates.csv"
+              headers={[
+                { key: 'fromCurrency', label: 'From Currency' },
+                { key: 'toCurrency', label: 'To Currency' },
+                { key: 'rate', label: 'Rate' },
+                { key: 'lastUpdated', label: 'Last Updated' },
+                { key: 'source', label: 'Source' }
+              ]}
+              size="sm"
+            />
           </HStack>
           <Box flex="1">
             <InputGroup maxW="320px" ml="auto">
