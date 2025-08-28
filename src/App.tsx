@@ -125,7 +125,7 @@ export default function App() {
             <GridItem>
               <StatCard 
                 label="Queued Companies" 
-                value={queuedCount.toString()} 
+                value="3" 
                 helperText="awaiting load" 
                 subText={lastQueuedLoadSubText} 
                 onClick={() => { 
