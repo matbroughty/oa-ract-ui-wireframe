@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast, Menu, MenuButton, MenuList, MenuItem, Image } from '@chakra-ui/react'
+import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast, Menu, MenuButton, MenuList, MenuItem, Image, useDisclosure } from '@chakra-ui/react'
 import logoImage from './oa-rev.png'
 import { SettingsIcon, AtSignIcon, TimeIcon, InfoIcon, ViewIcon, ChevronDownIcon } from '@chakra-ui/icons'
 import LoginView from './components/Auth/LoginView'
@@ -14,6 +14,7 @@ import ExtractFilesView from './components/System/ExtractFilesView'
 import ExchangeRateMaintenanceView from './components/System/ExchangeRateMaintenanceView'
 import ConfigurationOptionsView from './components/System/ConfigurationOptionsView'
 import CloudConnectionsView from './components/System/CloudConnectionsView'
+import KPICardSettings, { KPICard, KPICardVisibility, getDefaultVisibility, loadVisibilitySettings, saveVisibilitySettings } from './components/Settings/KPICardSettings'
 
 // Normalize type for companies array to avoid TS inference issues with `as const` in some environments
 export type CompanySeed = {
@@ -65,6 +66,69 @@ export default function App() {
     return companiesArr.filter(c => (c.status === 'queued' || (c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && daysSince(c.lastLoadDate) > 10))).length
   })()
 
+  // Define all KPI cards (both standard and special)
+  const allKPICards: KPICard[] = [
+    // Standard metrics from metrics.ts
+    ...metrics.map(m => ({
+      ...m,
+      isSpecial: false
+    })),
+    // Special cards
+    {
+      id: 'queued-companies',
+      label: 'Queued Companies',
+      value: '3',
+      helperText: 'awaiting load',
+      subText: 'Last load: varies by company',
+      isSpecial: true,
+      onClick: () => { 
+        setSection('System'); 
+        setSystemSubSection('ExtractFiles'); 
+        setShowMenu(true); 
+      }
+    },
+    {
+      id: 'cloud-processing',
+      label: 'CLOUD PROCESSING',
+      value: '12',
+      helperText: 'CLOUD EXTRACTS',
+      subText: '4 Cloud extracts processing, 8 Queued',
+      isSpecial: true,
+      onClick: () => { 
+        setSection('System'); 
+        setSystemSubSection('CloudConnections'); 
+        setShowMenu(true); 
+      }
+    },
+    {
+      id: 'system-summary',
+      label: 'System Summary',
+      value: '234',
+      helperText: 'Company Loads today',
+      subText: '678 Funding Exports, £650,987.12 Notified Invoices, 12 New Customers',
+      isSpecial: true,
+      onClick: () => { 
+        setSection('System'); 
+        setSystemSubSection('SystemSummary'); 
+        setShowMenu(true); 
+      }
+    }
+  ]
+
+  // KPI card visibility state
+  const [kpiCardVisibility, setKpiCardVisibility] = useState<KPICardVisibility>(() => {
+    const savedVisibility = loadVisibilitySettings()
+    return savedVisibility || getDefaultVisibility(allKPICards)
+  })
+
+  // KPI card settings modal
+  const { isOpen: isKpiSettingsOpen, onOpen: onKpiSettingsOpen, onClose: onKpiSettingsClose } = useDisclosure()
+
+  // Handle visibility change
+  const handleVisibilityChange = (newVisibility: KPICardVisibility) => {
+    setKpiCardVisibility(newVisibility)
+  }
+
   type Section = 'Companies' | 'System' | 'User' | 'Recent Activity' | 'Survey'
   type SystemSubSection = 'Main' | 'ExtractFiles' | 'ExchangeRates' | 'ConfigOptions' | 'SystemSummary' | 'CloudConnections'
   const [systemSubSection, setSystemSubSection] = useState<SystemSubSection>('Main')
@@ -112,55 +176,45 @@ export default function App() {
       lastQueuedLoadSubText = `Last load: ${dt.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}`
     }
 
+    // Update the subText for the Queued Companies card
+    const queuedCompaniesCard = allKPICards.find(card => card.id === 'queued-companies')
+    if (queuedCompaniesCard) {
+      queuedCompaniesCard.subText = lastQueuedLoadSubText
+    }
+
+    // Filter cards based on visibility settings
+    const visibleCards = allKPICards.filter(card => kpiCardVisibility[card.id])
+
     return (
       <Stack spacing={6}>
         {/* KPI / Metrics Row */}
         <Box px={{ base: 3, md: 4 }}>
+          <Flex justify="space-between" align="center" mb={4}>
+            <Heading size="md">Dashboard</Heading>
+            <Button 
+              size="sm" 
+              leftIcon={<Icon as={SettingsIcon} />} 
+              onClick={onKpiSettingsOpen}
+              colorScheme="brand"
+              variant="outline"
+            >
+              Customize KPI Cards
+            </Button>
+          </Flex>
           <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(6, 1fr)' }} gap={4}>
-            {metrics.slice(0, 3).map((m) => (
-              <GridItem key={m.id}>
-                <StatCard label={m.label} value={m.value} changePct={m.changePct} trend={m.trend} helperText={m.helperText} />
+            {visibleCards.map((card) => (
+              <GridItem key={card.id}>
+                <StatCard 
+                  label={card.label} 
+                  value={card.value} 
+                  changePct={card.changePct} 
+                  trend={card.trend} 
+                  helperText={card.helperText} 
+                  subText={card.subText}
+                  onClick={card.onClick}
+                />
               </GridItem>
             ))}
-            <GridItem>
-              <StatCard 
-                label="Queued Companies" 
-                value="3" 
-                helperText="awaiting load" 
-                subText={lastQueuedLoadSubText} 
-                onClick={() => { 
-                  setSection('System'); 
-                  setSystemSubSection('ExtractFiles'); 
-                  setShowMenu(true); 
-                }} 
-              />
-            </GridItem>
-            <GridItem>
-              <StatCard 
-                label="CLOUD PROCESSING" 
-                value="12" 
-                helperText="CLOUD EXTRACTS" 
-                subText="4 Cloud extracts processing, 8 Queued" 
-                onClick={() => { 
-                  setSection('System'); 
-                  setSystemSubSection('CloudConnections'); 
-                  setShowMenu(true); 
-                }} 
-              />
-            </GridItem>
-            <GridItem>
-              <StatCard 
-                label="System Summary" 
-                value="234" 
-                helperText="Company Loads today" 
-                subText="678 Funding Exports, £650,987.12 Notified Invoices, 12 New Customers" 
-                onClick={() => { 
-                  setSection('System'); 
-                  setSystemSubSection('SystemSummary'); 
-                  setShowMenu(true); 
-                }} 
-              />
-            </GridItem>
           </Grid>
         </Box>
         {/* Main companies table */}
@@ -502,6 +556,15 @@ export default function App() {
   // Otherwise, show the main application
   return (
     <Box minH="100vh" bg="gray.50">
+      {/* KPI Card Settings Modal */}
+      <KPICardSettings
+        isOpen={isKpiSettingsOpen}
+        onClose={onKpiSettingsClose}
+        cards={allKPICards}
+        visibility={kpiCardVisibility}
+        onVisibilityChange={handleVisibilityChange}
+      />
+
       <Container maxW={(section === 'Companies' && !showMenu) ? '100%' : '7xl'} py={8} px={(section === 'Companies' && !showMenu) ? 0 : undefined}>
         {section === 'Companies' && !showMenu ? (
           <Box px={{ base: 3, md: 4 }}>
