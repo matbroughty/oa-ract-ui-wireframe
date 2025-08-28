@@ -40,6 +40,7 @@ const KPI_VISIBILITY_KEY = 'kpi_card_visibility'
 export const getDefaultVisibility = (cards: KPICard[]): KPICardVisibility => {
   const visibility: KPICardVisibility = {}
   cards.forEach(card => {
+    // Make all cards ticked by default
     visibility[card.id] = true
   })
   return visibility

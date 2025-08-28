@@ -8,89 +8,97 @@ export type CloudConnection = {
 }
 
 // Generate dummy data for cloud connections
+// Function to generate a random start date within the current hour
+function generateStartDate(minutesAgo: number): string {
+  const now = new Date();
+  // Subtract random minutes (1-60) from current time
+  now.setMinutes(now.getMinutes() - minutesAgo);
+  return now.toISOString();
+}
+
 export const cloudConnections: CloudConnection[] = [
   {
     id: '1',
     companyName: 'Acme Widgets',
     connector: 'CODAT',
-    startDate: '2025-08-15T10:30:00Z',
+    startDate: generateStartDate(5), // 5 minutes ago
     status: 'QUEUED'
   },
   {
     id: '2',
     companyName: 'Goode Wood Furniture',
     connector: 'XERO',
-    startDate: '2025-08-14T09:15:00Z',
+    startDate: generateStartDate(12), // 12 minutes ago
     status: 'EXTRACTING'
   },
   {
     id: '3',
     companyName: 'Lunar Logistics',
     connector: 'VALIDIS',
-    startDate: '2025-08-13T14:45:00Z',
+    startDate: generateStartDate(18), // 18 minutes ago
     status: 'QUEUED'
   },
   {
     id: '4',
     companyName: 'Birch & Co',
     connector: 'QB',
-    startDate: '2025-08-12T11:20:00Z',
+    startDate: generateStartDate(25), // 25 minutes ago
     status: 'EXTRACTING'
   },
   {
     id: '5',
     companyName: 'Aurora Media',
     connector: 'XERO',
-    startDate: '2025-08-11T16:05:00Z',
+    startDate: generateStartDate(30), // 30 minutes ago
     status: 'QUEUED'
   },
   {
     id: '6',
     companyName: 'Falcon Tools',
     connector: 'VALIDIS',
-    startDate: '2025-08-10T13:40:00Z',
+    startDate: generateStartDate(35), // 35 minutes ago
     status: 'EXTRACTING'
   },
   {
     id: '7',
     companyName: 'Maple Hardware',
     connector: 'CODAT',
-    startDate: '2025-08-09T08:55:00Z',
+    startDate: generateStartDate(40), // 40 minutes ago
     status: 'QUEUED'
   },
   {
     id: '8',
     companyName: 'Green Leaf Foods',
     connector: 'QB',
-    startDate: '2025-08-08T15:30:00Z',
+    startDate: generateStartDate(45), // 45 minutes ago
     status: 'EXTRACTING'
   },
   {
     id: '9',
     companyName: 'Nimbus Cloudware',
     connector: 'VALIDIS',
-    startDate: '2025-08-07T12:15:00Z',
+    startDate: generateStartDate(50), // 50 minutes ago
     status: 'QUEUED'
   },
   {
     id: '10',
     companyName: 'Kensington Books',
     connector: 'CODAT',
-    startDate: '2025-08-06T10:00:00Z',
+    startDate: generateStartDate(52), // 52 minutes ago
     status: 'QUEUED'
   },
   {
     id: '11',
     companyName: 'Stellar Systems',
     connector: 'XERO',
-    startDate: '2025-08-05T14:25:00Z',
+    startDate: generateStartDate(55), // 55 minutes ago
     status: 'QUEUED'
   },
   {
     id: '12',
     companyName: 'Quantum Innovations',
     connector: 'QB',
-    startDate: '2025-08-04T09:50:00Z',
+    startDate: generateStartDate(58), // 58 minutes ago
     status: 'QUEUED'
   }
 ]

@@ -30,8 +30,10 @@ export default function TablesTableRow(props: CompanyRow & {
   onRefresh?: (id: string) => void
   onSnapshot?: (id: string) => void
   onChangeClick?: (id: string) => void
+  onFundingClick?: (id: string) => void
+  onConnectorClick?: (id: string) => void
 }) {
-  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, notifiedSalesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, onChangeClick, connector, loadStatus, hoverTitle, funding, hasBalanceChanged } = props
+  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, notifiedSalesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, onChangeClick, onFundingClick, onConnectorClick, connector, loadStatus, hoverTitle, funding, hasBalanceChanged } = props
   const isCloud = status === 'cloud'
   const badgeColor = isCloud ? 'green' : 'gray'
   const connectorLabel = isCloud ? (connector === 'native' ? 'Native Cloud' : connector === 'codat' ? 'Codat' : connector === 'validis' ? 'Validis' : 'Cloud') : 'Desktop'
@@ -74,7 +76,23 @@ export default function TablesTableRow(props: CompanyRow & {
         <Text>{formatGBP(purchaseBalanceGBP)}</Text>
       </Td>
       <Td>
-        <Badge colorScheme={funding === 'Pool' ? 'purple' : funding === 'Company' ? 'blue' : 'gray'} variant="subtle">{funding || 'Not funded'}</Badge>
+        {(funding === 'Pool' || funding === 'Company') ? (
+          <Tooltip label="Click to view exports">
+            <Badge 
+              colorScheme={funding === 'Pool' ? 'purple' : 'blue'} 
+              variant="subtle" 
+              cursor="pointer"
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                onFundingClick?.(id); 
+              }}
+            >
+              {funding}
+            </Badge>
+          </Tooltip>
+        ) : (
+          <Badge colorScheme="gray" variant="subtle">Not funded</Badge>
+        )}
       </Td>
       <Td>
         <Badge colorScheme={badgeColor} variant="subtle">{connectorLabel}</Badge>

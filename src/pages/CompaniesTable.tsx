@@ -678,6 +678,27 @@ export default function CompaniesTable() {
     setChangeTransactionsOpen(true)
   }
 
+  // Function to handle the funding click event
+  function handleFundingClick(id: string) {
+    const row = data.find(d => d.id === id)
+    if (!row) return
+
+    const funding = getFunding(row)
+    if (funding !== 'Pool' && funding !== 'Company') return
+
+    // Get the latest snapshot for this company
+    const snaps = makeSnapshots(row)
+    if (snaps.length === 0) return
+
+    const latestSnapshot = snaps[0]
+
+    // Set the snapshot target for the exports modal
+    setSnapshotTarget({ id, name: row.name })
+
+    // Open the exports modal for the latest snapshot
+    openExportsModal(latestSnapshot)
+  }
+
   // Function to close the change transactions modal
   function closeChangeTransactionsModal() {
     setChangeTransactionsOpen(false)
@@ -882,6 +903,7 @@ export default function CompaniesTable() {
                   onRefresh={(id) => handleRefreshClick(id)}
                   onSnapshot={(id) => handleSnapshotClick(id)}
                   onChangeClick={(id) => handleChangeClick(id)}
+                  onFundingClick={(id) => handleFundingClick(id)}
                 />
               ))}
             </Tbody>

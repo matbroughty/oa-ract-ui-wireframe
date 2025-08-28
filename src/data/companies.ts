@@ -1,5 +1,15 @@
 export const companies = [
   {
+    "id": "21",
+    "name": "Quantum Solutions",
+    "email": "contact21@quantum.com",
+    "reference": "8765432/123",
+    "lastLoadDate": "2025-08-15",
+    "salesBalanceGBP": 175000.00,
+    "purchaseBalanceGBP": 85000.00,
+    "status": "queued"
+  },
+  {
     "id": "1",
     "name": "Jimbo's Cars",
     "email": "contact01@jimbos.com",

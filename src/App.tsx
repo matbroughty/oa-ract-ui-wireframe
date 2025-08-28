@@ -54,17 +54,6 @@ export default function App() {
     })
   }
 
-  // Compute queued companies count (demo rule): cloud companies with non-zero balances and last load > 10 days ago
-  const queuedCount = (() => {
-    const today = new Date()
-    function daysSince(dateISO: string) {
-      const d = new Date(dateISO)
-      if (isNaN(d.getTime())) return 999
-      const diff = Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
-      return diff
-    }
-    return companiesArr.filter(c => (c.status === 'queued' || (c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && daysSince(c.lastLoadDate) > 10))).length
-  })()
 
   // Define all KPI cards (both standard and special)
   const allKPICards: KPICard[] = [
@@ -74,19 +63,6 @@ export default function App() {
       isSpecial: false
     })),
     // Special cards
-    {
-      id: 'queued-companies',
-      label: 'Queued Companies',
-      value: '3',
-      helperText: 'awaiting load',
-      subText: 'Last load: varies by company',
-      isSpecial: true,
-      onClick: () => { 
-        setSection('System'); 
-        setSystemSubSection('ExtractFiles'); 
-        setShowMenu(true); 
-      }
-    },
     {
       id: 'cloud-processing',
       label: 'CLOUD PROCESSING',
@@ -161,26 +137,7 @@ export default function App() {
   }
 
   function CompaniesView() {
-    // Compute latest last load date among queued companies
-    const queuedCompanies = companiesArr.filter(c => {
-      const today = new Date()
-      const d = new Date(c.lastLoadDate)
-      const days = isNaN(d.getTime()) ? 999 : Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
-      return c.status === 'queued' || (c.status === 'cloud' && (c.salesBalanceGBP !== 0 || c.purchaseBalanceGBP !== 0) && days > 10)
-    })
-    let lastQueuedLoadSubText: string | undefined
-    if (queuedCompanies.length > 0) {
-      // Find the most recent load date within queued companies (max by date)
-      const maxISO = queuedCompanies.map(c => c.lastLoadDate).sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
-      const dt = new Date(maxISO)
-      lastQueuedLoadSubText = `Last load: ${dt.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}`
-    }
 
-    // Update the subText for the Queued Companies card
-    const queuedCompaniesCard = allKPICards.find(card => card.id === 'queued-companies')
-    if (queuedCompaniesCard) {
-      queuedCompaniesCard.subText = lastQueuedLoadSubText
-    }
 
     // Filter cards based on visibility settings
     const visibleCards = allKPICards.filter(card => kpiCardVisibility[card.id])
