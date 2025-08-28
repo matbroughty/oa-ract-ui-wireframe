@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast, Menu, MenuButton, MenuList, MenuItem, Image, useDisclosure } from '@chakra-ui/react'
+import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast, Menu, MenuButton, MenuList, MenuItem, Image, useDisclosure, useColorMode, IconButton } from '@chakra-ui/react'
 import logoImage from './oa-rev.png'
-import { SettingsIcon, AtSignIcon, TimeIcon, InfoIcon, ViewIcon, ChevronDownIcon } from '@chakra-ui/icons'
+import { SettingsIcon, AtSignIcon, TimeIcon, InfoIcon, ViewIcon, ChevronDownIcon, MoonIcon, SunIcon } from '@chakra-ui/icons'
 import LoginView from './components/Auth/LoginView'
 import CompaniesTable from './pages/CompaniesTable'
 import StatCard from './components/Cards/StatCard'
@@ -34,6 +34,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
   const [currentUser, setCurrentUser] = useState<string>('')
   const toast = useToast()
+  const { colorMode } = useColorMode()
 
   // Handle successful login
   const handleLogin = (username: string) => {
@@ -52,6 +53,23 @@ export default function App() {
       duration: 3000,
       isClosable: true
     })
+  }
+
+  // Color mode toggle component
+  function ColorModeToggle() {
+    const { colorMode, toggleColorMode } = useColorMode()
+    return (
+      <IconButton
+        aria-label={`Toggle ${colorMode === 'light' ? 'Dark' : 'Light'} Mode`}
+        icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+        onClick={toggleColorMode}
+        variant="ghost"
+        colorScheme="brand"
+        size="md"
+        mr={2}
+        _hover={{ bg: colorMode === 'light' ? 'gray.100' : 'gray.700' }}
+      />
+    )
   }
 
 
@@ -512,7 +530,7 @@ export default function App() {
 
   // Otherwise, show the main application
   return (
-    <Box minH="100vh" bg="gray.50">
+    <Box minH="100vh" bg={colorMode === 'dark' ? 'gray.900' : 'gray.50'}>
       {/* KPI Card Settings Modal */}
       <KPICardSettings
         isOpen={isKpiSettingsOpen}
@@ -529,15 +547,15 @@ export default function App() {
               align="center" 
               mb={8} 
               gap={4} 
-              bg="white" 
+              bg={colorMode === 'dark' ? 'gray.800' : 'white'} 
               p={4} 
               borderRadius="xl" 
               boxShadow="md"
               borderWidth="1px"
-              borderColor="gray.100"
+              borderColor={colorMode === 'dark' ? 'gray.700' : 'gray.100'}
             >
               <Image src={logoImage} alt="Open Accounting Logo" height="50px" mr={4} />
-              <Heading size="lg" color="brand.700">
+              <Heading size="lg" color={colorMode === 'dark' ? 'brand.200' : 'brand.700'}>
                 Open Accounting — {section}
               </Heading>
               <Spacer />
@@ -558,12 +576,13 @@ export default function App() {
                   <MenuItem onClick={handleLogout} _hover={{ bg: 'red.50', color: 'red.500' }}>Logout</MenuItem>
                 </MenuList>
               </Menu>
+              <ColorModeToggle />
               <Button 
                 size="sm" 
                 variant="ghost" 
                 onClick={() => setShowMenu(s => !s)}
                 colorScheme="gray"
-                _hover={{ bg: 'gray.100' }}
+                _hover={{ bg: colorMode === 'dark' ? 'gray.700' : 'gray.100' }}
               >
                 {showMenu ? 'Hide menu' : 'Show menu'}
               </Button>
@@ -574,15 +593,15 @@ export default function App() {
             align="center" 
             mb={8} 
             gap={4} 
-            bg="white" 
+            bg={colorMode === 'dark' ? 'gray.800' : 'white'} 
             p={4} 
             borderRadius="xl" 
             boxShadow="md"
             borderWidth="1px"
-            borderColor="gray.100"
+            borderColor={colorMode === 'dark' ? 'gray.700' : 'gray.100'}
           >
             <Image src={logoImage} alt="Open Accounting Logo" height="50px" mr={4} />
-            <Heading size="lg" color="brand.700">
+            <Heading size="lg" color={colorMode === 'dark' ? 'brand.200' : 'brand.700'}>
               Open Accounting — {section}
             </Heading>
             <Spacer />
@@ -603,12 +622,13 @@ export default function App() {
                 <MenuItem onClick={handleLogout} _hover={{ bg: 'red.50', color: 'red.500' }}>Logout</MenuItem>
               </MenuList>
             </Menu>
+            <ColorModeToggle />
             <Button 
               size="sm" 
               variant="ghost" 
               onClick={() => setShowMenu(s => !s)}
               colorScheme="gray"
-              _hover={{ bg: 'gray.100' }}
+              _hover={{ bg: colorMode === 'dark' ? 'gray.700' : 'gray.100' }}
             >
               {showMenu ? 'Hide menu' : 'Show menu'}
             </Button>

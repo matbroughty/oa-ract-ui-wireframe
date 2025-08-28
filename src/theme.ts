@@ -208,46 +208,47 @@ const components = {
   },
 
   Card: {
-    baseStyle: {
+    baseStyle: (props: any) => ({
       container: {
         borderRadius: 'md',
         boxShadow: 'md',
         overflow: 'hidden',
         borderWidth: '1px',
-        borderColor: 'gray.200',
+        borderColor: props.colorMode === 'dark' ? 'gray.700' : 'gray.200',
+        bg: props.colorMode === 'dark' ? 'gray.700' : 'white',
       },
       body: {
         padding: 4,
       },
-    },
+    }),
   },
 
   Table: {
     variants: {
-      simple: {
+      simple: (props: any) => ({
         th: {
           borderBottom: '1px solid',
-          borderColor: 'gray.200',
+          borderColor: props.colorMode === 'dark' ? 'gray.600' : 'gray.200',
           padding: 3,
           fontWeight: 'semibold',
           textTransform: 'uppercase',
           fontSize: 'xs',
           letterSpacing: 'wider',
-          color: 'gray.600',
+          color: props.colorMode === 'dark' ? 'gray.300' : 'gray.600',
         },
         td: {
           borderBottom: '1px solid',
-          borderColor: 'gray.200',
+          borderColor: props.colorMode === 'dark' ? 'gray.600' : 'gray.200',
           padding: 3,
         },
         tbody: {
           tr: {
             _hover: {
-              bg: 'gray.50',
+              bg: props.colorMode === 'dark' ? 'gray.600' : 'gray.50',
             },
           },
         },
-      },
+      }),
     },
     defaultProps: {
       variant: 'simple',
@@ -266,12 +267,12 @@ const components = {
 
 // Define global styles
 const styles = {
-  global: {
+  global: (props: any) => ({
     body: {
-      bg: 'white',
-      color: 'gray.800',
+      bg: props.colorMode === 'dark' ? 'gray.800' : 'white',
+      color: props.colorMode === 'dark' ? 'white' : 'gray.800',
     },
-  },
+  }),
 }
 
 // Define typography
@@ -288,6 +289,10 @@ const theme = extendTheme({
   fonts,
   shadows: {
     outline: '0 0 0 2px rgba(128, 90, 213, 0.6)',
+  },
+  config: {
+    initialColorMode: 'dark',
+    useSystemColorMode: false,
   },
 })
 

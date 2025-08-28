@@ -14,6 +14,7 @@ import {
   useToast,
   FormErrorMessage
 } from '@chakra-ui/react'
+import backgroundImage from '../../lendscape_citybg.jpg'
 
 // Define valid users
 const VALID_USERS = [
@@ -34,7 +35,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Check if the username and password match any valid user
     const user = VALID_USERS.find(
       user => user.username === username && user.password === password
@@ -43,7 +44,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
     if (user) {
       // Clear any previous errors
       setError('')
-      
+
       // Show success toast
       toast({
         title: 'Login successful',
@@ -52,7 +53,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
         duration: 3000,
         isClosable: true
       })
-      
+
       // Call the onLogin callback with the username
       onLogin(username)
     } else {
@@ -62,14 +63,21 @@ export default function LoginView({ onLogin }: LoginViewProps) {
   }
 
   return (
-    <Box minH="100vh" bg="gray.50" py={10}>
+    <Box 
+      minH="100vh" 
+      py={10}
+      backgroundImage={`url(${backgroundImage})`}
+      backgroundSize="cover"
+      backgroundPosition="center"
+      backgroundRepeat="no-repeat"
+    >
       <Container maxW="md">
-        <Card>
+        <Card boxShadow="xl">
           <CardBody>
             <Stack spacing={6}>
               <Heading size="lg" textAlign="center">Open Accounting</Heading>
               <Text textAlign="center" color="gray.600">Please sign in to continue</Text>
-              
+
               <form onSubmit={handleSubmit}>
                 <Stack spacing={4}>
                   <FormControl isInvalid={!!error}>
@@ -82,7 +90,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
                       required
                     />
                   </FormControl>
-                  
+
                   <FormControl isInvalid={!!error}>
                     <FormLabel>Password</FormLabel>
                     <Input 
@@ -94,7 +102,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
                     />
                     {error && <FormErrorMessage>{error}</FormErrorMessage>}
                   </FormControl>
-                  
+
                   <Button 
                     type="submit" 
                     colorScheme="blue" 
@@ -106,7 +114,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
                   </Button>
                 </Stack>
               </form>
-              
+
               <Text fontSize="sm" color="gray.500" textAlign="center">
                 Valid users: Admin User 1, Admin User 2, Admin User 3
               </Text>
