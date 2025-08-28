@@ -9,9 +9,11 @@ import { metrics } from './data/metrics'
 import { activities } from './data/activities'
 import ActivityItem from './components/Activity/ActivityItem'
 import { companies as seedCompanies } from './data/companies'
+import { cloudConnections } from './data/cloudConnections'
 import ExtractFilesView from './components/System/ExtractFilesView'
 import ExchangeRateMaintenanceView from './components/System/ExchangeRateMaintenanceView'
 import ConfigurationOptionsView from './components/System/ConfigurationOptionsView'
+import CloudConnectionsView from './components/System/CloudConnectionsView'
 
 // Normalize type for companies array to avoid TS inference issues with `as const` in some environments
 export type CompanySeed = {
@@ -64,7 +66,7 @@ export default function App() {
   })()
 
   type Section = 'Companies' | 'System' | 'User' | 'Recent Activity' | 'Survey'
-  type SystemSubSection = 'Main' | 'ExtractFiles' | 'ExchangeRates' | 'ConfigOptions' | 'SystemSummary'
+  type SystemSubSection = 'Main' | 'ExtractFiles' | 'ExchangeRates' | 'ConfigOptions' | 'SystemSummary' | 'CloudConnections'
   const [systemSubSection, setSystemSubSection] = useState<SystemSubSection>('Main')
   const [section, setSection] = useState<Section>('Companies')
   const [showMenu, setShowMenu] = useState(false)
@@ -114,7 +116,7 @@ export default function App() {
       <Stack spacing={6}>
         {/* KPI / Metrics Row */}
         <Box px={{ base: 3, md: 4 }}>
-          <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(5, 1fr)' }} gap={4}>
+          <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)', xl: 'repeat(6, 1fr)' }} gap={4}>
             {metrics.slice(0, 3).map((m) => (
               <GridItem key={m.id}>
                 <StatCard label={m.label} value={m.value} changePct={m.changePct} trend={m.trend} helperText={m.helperText} />
@@ -129,6 +131,19 @@ export default function App() {
                 onClick={() => { 
                   setSection('System'); 
                   setSystemSubSection('ExtractFiles'); 
+                  setShowMenu(true); 
+                }} 
+              />
+            </GridItem>
+            <GridItem>
+              <StatCard 
+                label="CLOUD PROCESSING" 
+                value="12" 
+                helperText="CLOUD EXTRACTS" 
+                subText="4 Cloud extracts processing, 8 Queued" 
+                onClick={() => { 
+                  setSection('System'); 
+                  setSystemSubSection('CloudConnections'); 
                   setShowMenu(true); 
                 }} 
               />
@@ -167,6 +182,10 @@ export default function App() {
 
     if (systemSubSection === 'ConfigOptions') {
       return <ConfigurationOptionsView onBack={() => setSystemSubSection('Main')} />
+    }
+
+    if (systemSubSection === 'CloudConnections') {
+      return <CloudConnectionsView onBack={() => setSystemSubSection('Main')} />
     }
 
     if (systemSubSection === 'SystemSummary') {

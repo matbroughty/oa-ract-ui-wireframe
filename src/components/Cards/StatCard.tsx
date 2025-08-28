@@ -31,6 +31,7 @@ export default function StatCard({
   // Determine if this is a special card
   const isSystemSummary = label === 'System Summary'
   const isQueuedCompanies = label === 'Queued Companies'
+  const isCloudProcessing = label === 'CLOUD PROCESSING'
 
   return (
     <Card 
@@ -40,18 +41,18 @@ export default function StatCard({
       _hover={onClick ? { 
         transform: 'translateY(-4px)', 
         shadow: "lg",
-        borderColor: isSystemSummary ? "blue.300" : (isQueuedCompanies ? "orange.300" : "brand.200")
+        borderColor: isSystemSummary || isCloudProcessing ? "blue.300" : (isQueuedCompanies ? "orange.300" : "brand.200")
       } : { 
         shadow: "md" 
       }}
       transition="all 0.3s ease"
       borderWidth="1px"
-      borderColor={isSystemSummary ? "blue.100" : (isQueuedCompanies ? "orange.100" : borderColor)}
+      borderColor={isSystemSummary || isCloudProcessing ? "blue.100" : (isQueuedCompanies ? "orange.100" : borderColor)}
       borderRadius="xl"
       overflow="hidden"
       bg={bgColor}
       position="relative"
-      boxShadow={isSystemSummary || isQueuedCompanies ? "md" : "sm"}
+      boxShadow={isSystemSummary || isCloudProcessing || isQueuedCompanies ? "md" : "sm"}
     >
       {/* Decorative top border for visual interest */}
       <Box 
@@ -60,7 +61,7 @@ export default function StatCard({
         left="0" 
         right="0" 
         h="4px" 
-        bgGradient={isSystemSummary 
+        bgGradient={isSystemSummary || isCloudProcessing
           ? "linear(to-r, blue.400, purple.500)" 
           : (isQueuedCompanies
             ? "linear(to-r, orange.400, amber.500)"
@@ -78,7 +79,7 @@ export default function StatCard({
             <Text 
               fontSize="sm" 
               fontWeight="bold" 
-              color={isSystemSummary ? "blue.700" : (isQueuedCompanies ? "orange.700" : labelColor)} 
+              color={isSystemSummary || isCloudProcessing ? "blue.700" : (isQueuedCompanies ? "orange.700" : labelColor)} 
               textTransform="uppercase" 
               letterSpacing="wider"
             >
@@ -89,16 +90,20 @@ export default function StatCard({
               <Icon as={InfoIcon} color="blue.500" boxSize={4} />
             )}
 
+            {isCloudProcessing && (
+              <Icon as={InfoIcon} color="blue.500" boxSize={4} />
+            )}
+
             {isQueuedCompanies && (
               <Icon as={TimeIcon} color="orange.500" boxSize={4} />
             )}
           </Flex>
 
           <Text 
-            fontSize={isSystemSummary || isQueuedCompanies ? "4xl" : "3xl"} 
+            fontSize={isSystemSummary || isCloudProcessing || isQueuedCompanies ? "4xl" : "3xl"} 
             fontWeight="extrabold" 
             lineHeight="1.2"
-            bgGradient={isSystemSummary 
+            bgGradient={isSystemSummary || isCloudProcessing
               ? "linear(to-r, blue.500, purple.600)" 
               : (isQueuedCompanies
                 ? "linear(to-r, orange.500, amber.600)"
@@ -133,7 +138,7 @@ export default function StatCard({
 
           {!changePct && helperText && (
             <Badge 
-              colorScheme={isSystemSummary ? "blue" : (isQueuedCompanies ? "orange" : "brand")} 
+              colorScheme={isSystemSummary || isCloudProcessing ? "blue" : (isQueuedCompanies ? "orange" : "brand")} 
               variant="subtle" 
               px={3} 
               py={1.5} 
@@ -153,7 +158,7 @@ export default function StatCard({
               mt={1}
               lineHeight="1.6"
               maxW="100%"
-              noOfLines={isSystemSummary || isQueuedCompanies ? 2 : 1}
+              noOfLines={isSystemSummary || isCloudProcessing || isQueuedCompanies ? 2 : 1}
             >
               {subText}
             </Text>

@@ -684,6 +684,36 @@ export default function CompaniesTable() {
     setChangeTransactions([])
   }
 
+  // Function to handle transaction row click in the change transactions modal
+  function handleTransactionRowClick(tx: SnapshotTransaction) {
+    // Create a mock snapshot with minimal required data
+    const mockSnapshot: Snapshot = {
+      loadDate: tx.entryDate,
+      salesBalance: 0,
+      previousBalance: 0,
+      newItemCount: 1,
+      newInvoiceTotal: 0,
+      newCreditTotal: 0,
+      newPaymentTotal: 0,
+      invoiceTotal: 0,
+      debitAdjTotal: 0,
+      paymentTotal: 0,
+      creditNoteTotal: 0,
+      creditAdjTotal: 0,
+      newItemAmount: 0,
+      changedItemAmount: 0,
+      closedItemAmount: 0,
+      deletedItemAmount: 0
+    }
+
+    // Set the transactions snapshot and transactions
+    setTransactionsSnapshot(mockSnapshot)
+    setSnapshotTransactions([tx])
+
+    // Close the change transactions modal
+    closeChangeTransactionsModal()
+  }
+
   // Extract modal state and helpers
   const [extractSnapshot, setExtractSnapshot] = useState<Snapshot | null>(null)
   const [extractXML, setExtractXML] = useState<string>('')
@@ -1319,7 +1349,11 @@ export default function CompaniesTable() {
     <Modal isOpen={!!transactionsSnapshot} onClose={closeTransactionsModal} size="xl">
       <ModalOverlay />
       <ModalContent maxH="90vh">
-        <ModalHeader>New Transactions — {snapshotTarget?.name || ''}</ModalHeader>
+        <ModalHeader>
+          {snapshotTransactions.length === 1 && snapshotTransactions[0].changeStatus 
+            ? `Transaction Details — ${snapshotTransactions[0].changeStatus}` 
+            : `New Transactions — ${snapshotTarget?.name || ''}`}
+        </ModalHeader>
         <ModalCloseButton />
         <ModalBody overflowY="auto" maxH="calc(90vh - 130px)">
           {transactionsSnapshot && (
@@ -1450,9 +1484,9 @@ export default function CompaniesTable() {
       />
     )}
     {/* Change Transactions Modal */}
-    <Modal isOpen={changeTransactionsOpen} onClose={closeChangeTransactionsModal} size="xl">
+    <Modal isOpen={changeTransactionsOpen} onClose={closeChangeTransactionsModal} size="full">
       <ModalOverlay />
-      <ModalContent maxH="90vh">
+      <ModalContent maxH="90vh" maxW="90vw">
         <ModalHeader>Transactions with Changes</ModalHeader>
         <ModalCloseButton />
         <ModalBody overflowY="auto" maxH="calc(90vh - 130px)">
@@ -1501,7 +1535,12 @@ export default function CompaniesTable() {
                 </Thead>
                 <Tbody>
                   {changeTransactions.map(tx => (
-                    <Tr key={tx.id} _hover={{ bg: 'gray.50' }}>
+                    <Tr 
+                      key={tx.id} 
+                      _hover={{ bg: 'gray.50' }} 
+                      cursor="pointer"
+                      onClick={() => handleTransactionRowClick(tx)}
+                    >
                       <Td>
                         <Text fontWeight="medium">{tx.customerName}</Text>
                         <Text fontSize="xs" color="gray.500">{tx.customerRef}</Text>
