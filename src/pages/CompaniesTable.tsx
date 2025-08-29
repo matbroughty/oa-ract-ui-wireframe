@@ -1096,6 +1096,11 @@ export default function CompaniesTable() {
       isOpen={createDialog.isOpen}
       onClose={createDialog.onClose}
       onSubmit={handleCreateSubmit}
+      existingCompanies={data.map(company => ({
+        id: company.id,
+        name: company.name,
+        reference: company.reference
+      }))}
     />
 
     <Modal isOpen={registrationDialog.isOpen && !!registrationUrl} onClose={() => { setRegistrationUrl(null); registrationDialog.onClose() }}>

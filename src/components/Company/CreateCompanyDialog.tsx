@@ -15,6 +15,7 @@ import {
   ModalOverlay,
   Select,
   Stack,
+  HStack,
 } from '@chakra-ui/react'
 import { currencyCodes, type CurrencyCode } from '../../data/currencies'
 
@@ -32,10 +33,12 @@ export default function CreateCompanyDialog({
   isOpen,
   onClose,
   onSubmit,
+  existingCompanies = [],
 }: {
   isOpen: boolean
   onClose: () => void
   onSubmit: (payload: CreateCompanyPayload) => void
+  existingCompanies?: Array<{ id: string; name: string; reference: string }>
 }) {
   const [name, setName] = useState('')
   const [reference, setReference] = useState('')
@@ -44,6 +47,7 @@ export default function CreateCompanyDialog({
   const [currencyCode, setCurrencyCode] = useState<CurrencyCode>('GBP')
   const [contactName, setContactName] = useState('')
   const [createRegistration, setCreateRegistration] = useState(true)
+  const [useExistingCompany, setUseExistingCompany] = useState(false)
 
   const [touched, setTouched] = useState<{[k: string]: boolean}>({})
 
@@ -56,6 +60,7 @@ export default function CreateCompanyDialog({
       setCurrencyCode('GBP')
       setContactName('')
       setCreateRegistration(true)
+      setUseExistingCompany(false)
       setTouched({})
     }
   }, [isOpen])
@@ -93,8 +98,38 @@ export default function CreateCompanyDialog({
         <ModalBody>
           <Stack spacing={4}>
             <FormControl isInvalid={!!errors.name && touched.name}>
-              <FormLabel>Company name</FormLabel>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Acme Ltd" />
+              <HStack justify="space-between" align="center">
+                <FormLabel mb={0}>Company name</FormLabel>
+                <Checkbox 
+                  isChecked={useExistingCompany} 
+                  onChange={(e) => setUseExistingCompany(e.target.checked)}
+                  size="sm"
+                >
+                  Use existing company
+                </Checkbox>
+              </HStack>
+              {useExistingCompany ? (
+                <Select 
+                  value={name} 
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    // Find the selected company
+                    const selectedCompany = existingCompanies.find(c => c.name === e.target.value);
+                    if (selectedCompany) {
+                      // Set reference to the part before the first '/'
+                      const refParts = selectedCompany.reference.split('/');
+                      setReference(refParts[0]);
+                    }
+                  }}
+                  placeholder="Select an existing company"
+                >
+                  {existingCompanies.map(company => (
+                    <option key={company.id} value={company.name}>{company.name}</option>
+                  ))}
+                </Select>
+              ) : (
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Acme Ltd" />
+              )}
               <FormErrorMessage>{errors.name}</FormErrorMessage>
             </FormControl>
             <FormControl isInvalid={!!errors.reference && touched.reference}>
