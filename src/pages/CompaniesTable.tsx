@@ -822,7 +822,7 @@ export default function CompaniesTable() {
       { name: 'jnlp.instruction', value: 'startup' },
       { name: 'jnlp.help-url', value: 'https://oa-external.lendscape.com\\/help/index' },
       { name: 'jnlp.auto-update', value: 'true' },
-      { name: 'sageLine50.directory', value: 'G\\:\\\\RICHBURNS' },
+      { name: 'sageLine50.directory', value: 'G\\:\\\\some-folder' },
       { name: 'jnlp.central.version', value: '3.6.3' },
       { name: 'jnlp.excel-output', value: 'false' },
       { name: '#proxyURL', value: '' },
