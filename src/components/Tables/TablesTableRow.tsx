@@ -1,6 +1,6 @@
 
 import { Badge, HStack, IconButton, Td, Text, Tr, Tooltip, VStack, Icon } from '@chakra-ui/react'
-import { EditIcon, SmallCloseIcon, RepeatIcon, TimeIcon, TriangleUpIcon, TriangleDownIcon, InfoIcon } from '@chakra-ui/icons'
+import { EditIcon, SmallCloseIcon, RepeatIcon, TimeIcon, TriangleUpIcon, TriangleDownIcon, InfoIcon, ViewIcon } from '@chakra-ui/icons'
 
 export type CompanyRow = {
   id: string
@@ -12,6 +12,8 @@ export type CompanyRow = {
   notifiedSalesBalanceGBP: number
   purchaseBalanceGBP: number
   status: 'cloud' | 'desktop'
+  internalName?: string
+  currencyCode?: string
 }
 
 function formatGBP(value: number) {
@@ -35,8 +37,9 @@ export default function TablesTableRow(props: CompanyRow & {
   onChangeClick?: (id: string) => void
   onFundingClick?: (id: string) => void
   onConnectorClick?: (id: string) => void
+  onOpenSalesItems?: (id: string) => void
 }) {
-  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, notifiedSalesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, onChangeClick, onFundingClick, onConnectorClick, connector, loadStatus, hoverTitle, funding, hasBalanceChanged, notifiedSalesBalanceChange, notifiedSalesBalancePercentChange, hasMixedCurrencies } = props
+  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, notifiedSalesBalanceGBP, purchaseBalanceGBP, status, internalName, currencyCode, onEdit, onClear, onSelect, onRefresh, onSnapshot, onChangeClick, onFundingClick, onConnectorClick, onOpenSalesItems, connector, loadStatus, hoverTitle, funding, hasBalanceChanged, notifiedSalesBalanceChange, notifiedSalesBalancePercentChange, hasMixedCurrencies } = props
   const isCloud = status === 'cloud'
   const badgeColor = isCloud ? 'green' : 'gray'
   const connectorLabel = isCloud ? (connector === 'native' ? 'Native Cloud' : connector === 'codat' ? 'Codat' : connector === 'validis' ? 'Validis' : 'Cloud') : 'Desktop'
@@ -61,6 +64,12 @@ export default function TablesTableRow(props: CompanyRow & {
         <VStack align="start" spacing={0.5}>
           <HStack spacing={1}>
             <Text fontWeight="semibold">{name}</Text>
+            {internalName && (
+              <Text fontSize="sm" color="gray.600">({internalName})</Text>
+            )}
+            {currencyCode && (
+              <Badge colorScheme="blue" variant="subtle" size="sm">{currencyCode}</Badge>
+            )}
             {hasMixedCurrencies && (
               <Tooltip label="This company has customers in multiple currencies">
                 <Icon as={InfoIcon} color="blue.500" boxSize={3} />
@@ -169,6 +178,11 @@ export default function TablesTableRow(props: CompanyRow & {
           {(salesBalanceGBP !== 0 || purchaseBalanceGBP !== 0) && (
             <Tooltip label="Snapshots">
               <IconButton aria-label="Snapshots" size="sm" icon={<TimeIcon />} onClick={(e) => { e.stopPropagation(); onSnapshot?.(id) }} />
+            </Tooltip>
+          )}
+          {salesBalanceGBP > 0 && (
+            <Tooltip label="Open Sales Items">
+              <IconButton aria-label="Open Sales Items" size="sm" icon={<ViewIcon />} onClick={(e) => { e.stopPropagation(); onOpenSalesItems?.(id) }} />
             </Tooltip>
           )}
           {isCloud && (

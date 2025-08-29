@@ -26,6 +26,7 @@ export type CreateCompanyPayload = {
   externalReference?: string
   currencyCode: CurrencyCode
   contactName?: string
+  internalName?: string
   createRegistration: boolean
 }
 
@@ -46,6 +47,7 @@ export default function CreateCompanyDialog({
   const [externalReference, setExternalReference] = useState('')
   const [currencyCode, setCurrencyCode] = useState<CurrencyCode>('GBP')
   const [contactName, setContactName] = useState('')
+  const [internalName, setInternalName] = useState('')
   const [createRegistration, setCreateRegistration] = useState(true)
   const [useExistingCompany, setUseExistingCompany] = useState(false)
 
@@ -59,6 +61,7 @@ export default function CreateCompanyDialog({
       setExternalReference('')
       setCurrencyCode('GBP')
       setContactName('')
+      setInternalName('')
       setCreateRegistration(true)
       setUseExistingCompany(false)
       setTouched({})
@@ -84,6 +87,7 @@ export default function CreateCompanyDialog({
       externalReference: externalReference.trim() || undefined,
       currencyCode,
       contactName: contactName.trim() || undefined,
+      internalName: internalName.trim() || undefined,
       createRegistration,
     })
     onClose()
@@ -145,6 +149,10 @@ export default function CreateCompanyDialog({
             <FormControl>
               <FormLabel>External reference</FormLabel>
               <Input value={externalReference} onChange={(e) => setExternalReference(e.target.value)} placeholder="Ext-Ref-001" />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Internal Name</FormLabel>
+              <Input value={internalName} onChange={(e) => setInternalName(e.target.value)} placeholder="Internal name (optional)" />
             </FormControl>
             <FormControl>
               <FormLabel>Currency code</FormLabel>

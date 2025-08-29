@@ -1,11 +1,12 @@
 
 import { Card, CardBody, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Icon, Input, InputGroup, InputLeftElement, HStack, Box, Text, Flex, useDisclosure, Button, Link, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, useClipboard, Stack, Checkbox, Select, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, Badge, Divider, useToast, Tooltip, useColorModeValue } from '@chakra-ui/react'
-import { TriangleDownIcon, TriangleUpIcon, SearchIcon, AddIcon, DownloadIcon } from '@chakra-ui/icons'
+import { TriangleDownIcon, TriangleUpIcon, SearchIcon, AddIcon, ViewIcon } from '@chakra-ui/icons'
 import ExportButton from '../components/Common/ExportButton'
 import { useMemo, useState } from 'react'
 import TablesTableRow, { CompanyRow } from '../components/Tables/TablesTableRow'
 import { companies as seedCompanies } from '../data/companies'
 import CompanyPanel from '../components/Company/CompanyPanel'
+import SalesLedgerPanel from '../components/Company/SalesLedgerPanel'
 import { getCompanyDetails } from '../data/companyDetails'
 import CreateCompanyDialog, { CreateCompanyPayload } from '../components/Company/CreateCompanyDialog'
 import EditCompanyDialog, { CompanyConfig } from '../components/Company/EditCompanyDialog'
@@ -295,6 +296,9 @@ export default function CompaniesTable() {
     deletedItemAmount: number
   }
   const [snapshotTarget, setSnapshotTarget] = useState<{ id: string; name: string } | null>(null)
+
+  // Sales Ledger Items Drawer state
+  const [salesLedgerTarget, setSalesLedgerTarget] = useState<{ id: string; name: string } | null>(null)
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
   const [series, setSeries] = useState<{ months: string[]; sales: number[]; purchase: number[] }>({ months: [], sales: [], purchase: [] })
   // Snapshot table filter/sort state
@@ -525,6 +529,12 @@ export default function CompaniesTable() {
       setSnapFromDate('')
       setSnapToDate('')
     }
+  }
+
+  function handleOpenSalesItemsClick(id: string) {
+    const row = data.find(d => d.id === id)
+    if (!row) return
+    setSalesLedgerTarget({ id, name: row.name })
   }
 
   function onSnapSortClick(key: SnapSortKey) {
@@ -952,6 +962,8 @@ export default function CompaniesTable() {
       notifiedSalesBalanceGBP: 0,
       purchaseBalanceGBP: 0,
       status: 'cloud',
+      internalName: payload.internalName,
+      currencyCode: payload.currencyCode,
     }
     setData(prev => [...prev, newRow])
 
@@ -1066,6 +1078,7 @@ export default function CompaniesTable() {
                   onChangeClick={(id) => handleChangeClick(id)}
                   onFundingClick={(id) => handleFundingClick(id)}
                   onConnectorClick={(id) => handleConnectorClick(id)}
+                  onOpenSalesItems={(id) => handleOpenSalesItemsClick(id)}
                 />
               ))}
             </Tbody>
@@ -1327,6 +1340,24 @@ export default function CompaniesTable() {
               </CardBody>
             </Card>
           </Stack>
+        </DrawerBody>
+      </DrawerContent>
+    </Drawer>
+
+    {/* Sales Ledger Items Drawer */}
+    <Drawer isOpen={!!salesLedgerTarget} placement="right" onClose={() => setSalesLedgerTarget(null)} size="xl">
+      <DrawerOverlay />
+      <DrawerContent w={{ base: '100%', md: '85vw', lg: '80vw' }} maxW="none">
+        <DrawerHeader borderBottomWidth="1px">
+          <HStack justify="space-between">
+            <Text fontWeight="semibold">Sales Ledger Items — {salesLedgerTarget?.name || ''}</Text>
+            <Button onClick={() => setSalesLedgerTarget(null)} variant="outline">Close</Button>
+          </HStack>
+        </DrawerHeader>
+        <DrawerBody>
+          {salesLedgerTarget && (
+            <SalesLedgerPanel companyId={salesLedgerTarget.id} companyName={salesLedgerTarget.name} />
+          )}
         </DrawerBody>
       </DrawerContent>
     </Drawer>
@@ -1677,13 +1708,13 @@ export default function CompaniesTable() {
     {/* Change Transactions Modal */}
     <Modal isOpen={changeTransactionsOpen} onClose={closeChangeTransactionsModal} size="full">
       <ModalOverlay />
-      <ModalContent maxH="90vh" maxW="90vw">
-        <ModalHeader>Transactions with Changes</ModalHeader>
+      <ModalContent maxH="90vh" maxW="90vw" bg={useColorModeValue("white", "gray.800")}>
+        <ModalHeader color={useColorModeValue("gray.800", "gray.100")}>Transactions with Changes</ModalHeader>
         <ModalCloseButton />
         <ModalBody overflowY="auto" maxH="calc(90vh - 130px)">
           <Stack spacing={4}>
             <HStack justify="space-between">
-              <Text fontSize="sm" color="gray.600">
+              <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")}>
                 Showing transactions that were added, changed, or closed
               </Text>
               <ExportButton 
@@ -1728,22 +1759,22 @@ export default function CompaniesTable() {
                   {changeTransactions.map(tx => (
                     <Tr 
                       key={tx.id} 
-                      _hover={{ bg: 'gray.50' }} 
+                      _hover={{ bg: useColorModeValue("gray.50", "gray.700") }} 
                       cursor="pointer"
                       onClick={() => handleTransactionRowClick(tx)}
                     >
                       <Td>
-                        <Text fontWeight="medium">{tx.customerName}</Text>
-                        <Text fontSize="xs" color="gray.500">{tx.customerRef}</Text>
+                        <Text fontWeight="medium" color={useColorModeValue("gray.800", "white")}>{tx.customerName}</Text>
+                        <Text fontSize="xs" color={useColorModeValue("gray.500", "gray.400")}>{tx.customerRef}</Text>
                       </Td>
-                      <Td>{tx.type}</Td>
-                      <Td>{tx.document}</Td>
-                      <Td>{new Date(tx.documentDate).toLocaleDateString('en-GB')}</Td>
-                      <Td>{new Date(tx.entryDate).toLocaleDateString('en-GB')}</Td>
-                      <Td isNumeric>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.amount)}</Td>
-                      <Td isNumeric>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.remaining)}</Td>
-                      <Td>{new Date(tx.dueDate).toLocaleDateString('en-GB')}</Td>
-                      <Td>{tx.notified ? 'Yes' : 'No'}</Td>
+                      <Td color={useColorModeValue("gray.800", "gray.100")}>{tx.type}</Td>
+                      <Td color={useColorModeValue("gray.800", "gray.100")}>{tx.document}</Td>
+                      <Td color={useColorModeValue("gray.800", "gray.100")}>{new Date(tx.documentDate).toLocaleDateString('en-GB')}</Td>
+                      <Td color={useColorModeValue("gray.800", "gray.100")}>{new Date(tx.entryDate).toLocaleDateString('en-GB')}</Td>
+                      <Td isNumeric color={useColorModeValue("gray.800", "gray.100")}>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.amount)}</Td>
+                      <Td isNumeric color={useColorModeValue("gray.800", "gray.100")}>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.remaining)}</Td>
+                      <Td color={useColorModeValue("gray.800", "gray.100")}>{new Date(tx.dueDate).toLocaleDateString('en-GB')}</Td>
+                      <Td color={useColorModeValue("gray.800", "gray.100")}>{tx.notified ? 'Yes' : 'No'}</Td>
                       <Td>
                         <Badge 
                           colorScheme={
@@ -1768,8 +1799,8 @@ export default function CompaniesTable() {
               </Table>
             </TableContainer>
 
-            <Box p={4} bg="gray.50" borderRadius="md">
-              <Text fontSize="sm" fontStyle="italic">
+            <Box p={4} bg={useColorModeValue("gray.50", "gray.700")} borderRadius="md">
+              <Text fontSize="sm" fontStyle="italic" color={useColorModeValue("gray.600", "gray.300")}>
                 These are the transactions that were added, changed, or closed as part of the load.
               </Text>
             </Box>

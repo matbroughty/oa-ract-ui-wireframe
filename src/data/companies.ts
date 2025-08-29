@@ -7,7 +7,9 @@ export const companies = [
     "lastLoadDate": "2025-08-15",
     "salesBalanceGBP": 175000.00,
     "purchaseBalanceGBP": 85000.00,
-    "status": "queued"
+    "status": "queued",
+    "currencyCode": "GBP",
+    "internalName": "QS Global"
   },
   {
     "id": "1",
@@ -17,7 +19,8 @@ export const companies = [
     "lastLoadDate": "2025-06-29",
     "salesBalanceGBP": 223416.02,
     "purchaseBalanceGBP": 95185.5,
-    "status": "desktop"
+    "status": "desktop",
+    "currencyCode": "GBP"
   },
   {
     "id": "2",
@@ -27,7 +30,9 @@ export const companies = [
     "lastLoadDate": "2025-08-10",
     "salesBalanceGBP": 163382.27,
     "purchaseBalanceGBP": 22509.58,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "USD",
+    "internalName": "Acme Manufacturing"
   },
   {
     "id": "3",
@@ -37,7 +42,8 @@ export const companies = [
     "lastLoadDate": "2023-06-22",
     "salesBalanceGBP": 235213.89,
     "purchaseBalanceGBP": 4423.8,
-    "status": "queued"
+    "status": "queued",
+    "currencyCode": "EUR"
   },
   {
     "id": "4",
@@ -47,7 +53,9 @@ export const companies = [
     "lastLoadDate": "2025-08-12",
     "salesBalanceGBP": 198319.34,
     "purchaseBalanceGBP": 20230.47,
-    "status": "desktop"
+    "status": "desktop",
+    "currencyCode": "GBP",
+    "internalName": "Brighton Cycling Ltd"
   },
   {
     "id": "5",
@@ -57,7 +65,8 @@ export const companies = [
     "lastLoadDate": "2025-06-27",
     "salesBalanceGBP": 28110.88,
     "purchaseBalanceGBP": 91503.72,
-    "status": "desktop"
+    "status": "desktop",
+    "currencyCode": "GBP"
   },
   {
     "id": "6",
@@ -67,7 +76,9 @@ export const companies = [
     "lastLoadDate": "2025-08-11",
     "salesBalanceGBP": 76359.5,
     "purchaseBalanceGBP": 73790.05,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "USD",
+    "internalName": "Lunar Shipping Inc"
   },
   {
     "id": "7",
@@ -77,7 +88,8 @@ export const companies = [
     "lastLoadDate": "2025-08-25",
     "salesBalanceGBP": 75112.89,
     "purchaseBalanceGBP": 91928.35,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "GBP"
   },
   {
     "id": "8",
@@ -87,7 +99,9 @@ export const companies = [
     "lastLoadDate": "2025-08-05",
     "salesBalanceGBP": 246875.51,
     "purchaseBalanceGBP": 145901.09,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "EUR",
+    "internalName": "Birch International"
   },
   {
     "id": "9",
@@ -97,7 +111,8 @@ export const companies = [
     "lastLoadDate": "2025-08-10",
     "salesBalanceGBP": 209482.45,
     "purchaseBalanceGBP": 1715.75,
-    "status": "desktop"
+    "status": "desktop",
+    "currencyCode": "GBP"
   },
   {
     "id": "10",
@@ -107,7 +122,9 @@ export const companies = [
     "lastLoadDate": "2025-07-15",
     "salesBalanceGBP": 131733.5,
     "purchaseBalanceGBP": 69016.94,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "CAD",
+    "internalName": "Aurora Productions"
   },
   {
     "id": "11",
@@ -117,7 +134,8 @@ export const companies = [
     "lastLoadDate": "2023-06-14",
     "salesBalanceGBP": 90077.61,
     "purchaseBalanceGBP": 134892.02,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "USD"
   },
   {
     "id": "12",
@@ -127,7 +145,9 @@ export const companies = [
     "lastLoadDate": "2025-06-23",
     "salesBalanceGBP": 201138.5,
     "purchaseBalanceGBP": 80224.08,
-    "status": "desktop"
+    "status": "desktop",
+    "currencyCode": "GBP",
+    "internalName": "Harbour Dining Ltd"
   },
   {
     "id": "13",
@@ -137,7 +157,8 @@ export const companies = [
     "lastLoadDate": "2025-08-05",
     "salesBalanceGBP": 139262.13,
     "purchaseBalanceGBP": 43960.0,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "CAD"
   },
   {
     "id": "14",
@@ -147,7 +168,9 @@ export const companies = [
     "lastLoadDate": "2025-08-24",
     "salesBalanceGBP": 192945.91,
     "purchaseBalanceGBP": 145341.58,
-    "status": "desktop"
+    "status": "desktop",
+    "currencyCode": "GBP",
+    "internalName": "Oxford Data Services"
   },
   {
     "id": "15",
@@ -157,7 +180,8 @@ export const companies = [
     "lastLoadDate": "2025-08-08",
     "salesBalanceGBP": 140635.54,
     "purchaseBalanceGBP": 18296.81,
-    "status": "desktop"
+    "status": "desktop",
+    "currencyCode": "GBP"
   },
   {
     "id": "16",
@@ -167,7 +191,9 @@ export const companies = [
     "lastLoadDate": "2025-07-24",
     "salesBalanceGBP": 126195.97,
     "purchaseBalanceGBP": 144768.8,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "EUR",
+    "internalName": "Green Leaf Organics"
   },
   {
     "id": "17",
@@ -177,7 +203,8 @@ export const companies = [
     "lastLoadDate": "2025-07-12",
     "salesBalanceGBP": 194803.93,
     "purchaseBalanceGBP": 81291.34,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "USD"
   },
   {
     "id": "18",
@@ -187,7 +214,9 @@ export const companies = [
     "lastLoadDate": "2023-05-27",
     "salesBalanceGBP": 20066.99,
     "purchaseBalanceGBP": 94132.56,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "GBP",
+    "internalName": "Kensington Publishing"
   },
   {
     "id": "19",
@@ -197,7 +226,8 @@ export const companies = [
     "lastLoadDate": "2025-06-04",
     "salesBalanceGBP": 221359.75,
     "purchaseBalanceGBP": 122478.64,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "AUD"
   },
   {
     "id": "20",
@@ -207,7 +237,9 @@ export const companies = [
     "lastLoadDate": "2025-07-04",
     "salesBalanceGBP": 149031.97,
     "purchaseBalanceGBP": 124443.91,
-    "status": "cloud"
+    "status": "cloud",
+    "currencyCode": "GBP",
+    "internalName": "Stellar Retail Group"
   }
 ] as const;
 export type Companies = typeof companies;
