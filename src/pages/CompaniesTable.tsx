@@ -1513,13 +1513,13 @@ export default function CompaniesTable() {
     {/* View Export File modal */}
     <Modal isOpen={!!viewFile} onClose={closeViewFile} size="6xl">
       <ModalOverlay />
-      <ModalContent maxW="90vw">
-        <ModalHeader>Export File — {viewFile?.name || ''}</ModalHeader>
+      <ModalContent maxW="90vw" bg={useColorModeValue("white", "gray.800")}>
+        <ModalHeader color={useColorModeValue("gray.800", "gray.100")}>Export File — {viewFile?.name || ''}</ModalHeader>
         <ModalCloseButton />
         <ModalBody maxH="70vh" overflowY="auto">
           {viewFile && (
-            <Box borderWidth="1px" borderRadius="md" p={3} bg="gray.50" maxH="65vh" overflow="auto">
-              <Box as="pre" fontSize="sm" fontFamily="mono" whiteSpace="pre">{viewFile.content}</Box>
+            <Box borderWidth="1px" borderRadius="md" p={3} bg={useColorModeValue("gray.50", "gray.700")} maxH="65vh" overflow="auto">
+              <Box as="pre" fontSize="sm" fontFamily="mono" whiteSpace="pre" color={useColorModeValue("gray.800", "gray.100")}>{viewFile.content}</Box>
             </Box>
           )}
         </ModalBody>
