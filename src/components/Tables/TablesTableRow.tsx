@@ -1,6 +1,6 @@
 
 import { Badge, HStack, IconButton, Td, Text, Tr, Tooltip, VStack, Icon } from '@chakra-ui/react'
-import { EditIcon, SmallCloseIcon, RepeatIcon, TimeIcon, TriangleUpIcon, TriangleDownIcon } from '@chakra-ui/icons'
+import { EditIcon, SmallCloseIcon, RepeatIcon, TimeIcon, TriangleUpIcon, TriangleDownIcon, InfoIcon } from '@chakra-ui/icons'
 
 export type CompanyRow = {
   id: string
@@ -25,6 +25,8 @@ export default function TablesTableRow(props: CompanyRow & {
   funding?: 'Not funded' | 'Company' | 'Pool'
   hasBalanceChanged?: boolean
   notifiedSalesBalanceChange?: 'increase' | 'decrease' | 'no-change'
+  notifiedSalesBalancePercentChange?: number | null
+  hasMixedCurrencies?: boolean
   onEdit?: (id: string) => void
   onClear?: (id: string) => void
   onSelect?: (id: string) => void
@@ -34,7 +36,7 @@ export default function TablesTableRow(props: CompanyRow & {
   onFundingClick?: (id: string) => void
   onConnectorClick?: (id: string) => void
 }) {
-  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, notifiedSalesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, onChangeClick, onFundingClick, onConnectorClick, connector, loadStatus, hoverTitle, funding, hasBalanceChanged, notifiedSalesBalanceChange } = props
+  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, notifiedSalesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, onChangeClick, onFundingClick, onConnectorClick, connector, loadStatus, hoverTitle, funding, hasBalanceChanged, notifiedSalesBalanceChange, notifiedSalesBalancePercentChange, hasMixedCurrencies } = props
   const isCloud = status === 'cloud'
   const badgeColor = isCloud ? 'green' : 'gray'
   const connectorLabel = isCloud ? (connector === 'native' ? 'Native Cloud' : connector === 'codat' ? 'Codat' : connector === 'validis' ? 'Validis' : 'Cloud') : 'Desktop'
@@ -57,7 +59,14 @@ export default function TablesTableRow(props: CompanyRow & {
     <Tr onClick={handleRowClick} _hover={{ bg: 'gray.50' }} cursor="pointer" title={hoverTitle}>
       <Td>
         <VStack align="start" spacing={0.5}>
-          <Text fontWeight="semibold">{name}</Text>
+          <HStack spacing={1}>
+            <Text fontWeight="semibold">{name}</Text>
+            {hasMixedCurrencies && (
+              <Tooltip label="This company has customers in multiple currencies">
+                <Icon as={InfoIcon} color="blue.500" boxSize={3} />
+              </Tooltip>
+            )}
+          </HStack>
           <Text fontSize="sm" color="gray.500">{email}</Text>
         </VStack>
       </Td>
@@ -74,9 +83,19 @@ export default function TablesTableRow(props: CompanyRow & {
         <HStack spacing={1} justifyContent="flex-end">
           <Text>{formatGBP(notifiedSalesBalanceGBP)}</Text>
           {notifiedSalesBalanceChange === 'increase' ? (
-            <Icon as={TriangleUpIcon} color="green.500" />
+            <HStack spacing={0}>
+              <Icon as={TriangleUpIcon} color="green.500" />
+              {notifiedSalesBalancePercentChange !== null && (
+                <Text fontSize="xs" color="green.500">+{notifiedSalesBalancePercentChange}%</Text>
+              )}
+            </HStack>
           ) : notifiedSalesBalanceChange === 'decrease' ? (
-            <Icon as={TriangleDownIcon} color="red.500" />
+            <HStack spacing={0}>
+              <Icon as={TriangleDownIcon} color="red.500" />
+              {notifiedSalesBalancePercentChange !== null && (
+                <Text fontSize="xs" color="red.500">{notifiedSalesBalancePercentChange}%</Text>
+              )}
+            </HStack>
           ) : (
             <Text color="gray.500">-</Text>
           )}

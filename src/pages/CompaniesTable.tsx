@@ -32,10 +32,35 @@ function sortData(data: CompanyRow[], sortKey: SortKey, direction: 'asc' | 'desc
 export default function CompaniesTable() {
   const toast = useToast()
   const [data, setData] = useState<CompanyRow[]>(
-    (seedCompanies as unknown as any[]).map(company => ({
-      ...company,
-      notifiedSalesBalanceGBP: Math.round((company.salesBalanceGBP * 0.95) * 100) / 100
-    }))
+    (seedCompanies as unknown as any[]).map(company => {
+      // Use company ID to determine the factor for notifiedSalesBalanceGBP
+      const id = Number(company.id) || 0
+
+      // Create a mix of increases and decreases with different percentages
+      let factor: number;
+
+      if (id % 5 === 0) {
+        // 20% increase
+        factor = 1.2;
+      } else if (id % 5 === 1) {
+        // 15% decrease
+        factor = 0.85;
+      } else if (id % 5 === 2) {
+        // 8% increase
+        factor = 1.08;
+      } else if (id % 5 === 3) {
+        // 10% decrease
+        factor = 0.9;
+      } else {
+        // 3% increase
+        factor = 1.03;
+      }
+
+      return {
+        ...company,
+        notifiedSalesBalanceGBP: Math.round((company.salesBalanceGBP * factor) * 100) / 100
+      };
+    })
   )
   const [sortKey, setSortKey] = useState<SortKey>('lastLoadDate')
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc')
@@ -156,6 +181,12 @@ export default function CompaniesTable() {
     return prevSales !== row.salesBalanceGBP || prevPurchase !== row.purchaseBalanceGBP
   }
 
+  // Determine if a company has customers with multiple currencies
+  function hasMixedCurrencies(row: CompanyRow): boolean {
+    // For demo purposes, companies with IDs divisible by 3 will have mixed currencies
+    return Number(row.id) % 3 === 0
+  }
+
   // Determine the change direction in notified sales balance
   function getNotifiedSalesBalanceChange(row: CompanyRow): 'increase' | 'decrease' | 'no-change' {
     // Make specific companies not show balance changes (IDs 3, 7, and 12)
@@ -164,18 +195,61 @@ export default function CompaniesTable() {
     // If notified sales balance is zero, there's no change
     if ((row.notifiedSalesBalanceGBP || 0) === 0) return 'no-change'
 
-    // For demo purposes, we'll calculate the previous notified sales balance
-    // as 5% less than the current sales balance (similar to how it's initialized)
-    const prevNotifiedSales = Math.max(0, Math.round(row.salesBalanceGBP * 0.95 * 0.95 * 100) / 100)
+    // Determine the change direction based on company ID
+    const id = Number(row.id) || 0
 
-    // Determine the change direction
-    if (row.notifiedSalesBalanceGBP > prevNotifiedSales) {
+    // Use the same logic as in the initialization to determine direction
+    if (id % 5 === 0 || id % 5 === 2 || id % 5 === 4) {
+      // These IDs have increases
       return 'increase'
-    } else if (row.notifiedSalesBalanceGBP < prevNotifiedSales) {
+    } else if (id % 5 === 1 || id % 5 === 3) {
+      // These IDs have decreases
       return 'decrease'
     } else {
       return 'no-change'
     }
+  }
+
+  // Calculate the percentage change in notified sales balance
+  function getNotifiedSalesBalancePercentChange(row: CompanyRow): number | null {
+    // Make specific companies not show balance changes (IDs 3, 7, and 12)
+    if (['3', '7', '12'].includes(row.id)) return null
+
+    // If notified sales balance is zero, there's no change
+    if ((row.notifiedSalesBalanceGBP || 0) === 0) return null
+
+    // Calculate the previous notified sales balance based on company ID
+    const id = Number(row.id) || 0
+    let prevFactor: number;
+
+    // Use the same logic as in the initialization, but calculate the previous factor
+    if (id % 5 === 0) {
+      // Was 20% higher than sales balance, now use sales balance as previous
+      prevFactor = 1.0;
+    } else if (id % 5 === 1) {
+      // Was 15% lower than sales balance, now use sales balance as previous
+      prevFactor = 1.0;
+    } else if (id % 5 === 2) {
+      // Was 8% higher than sales balance, now use sales balance as previous
+      prevFactor = 1.0;
+    } else if (id % 5 === 3) {
+      // Was 10% lower than sales balance, now use sales balance as previous
+      prevFactor = 1.0;
+    } else {
+      // Was 3% higher than sales balance, now use sales balance as previous
+      prevFactor = 1.0;
+    }
+
+    const prevNotifiedSales = Math.max(0, Math.round(row.salesBalanceGBP * prevFactor * 100) / 100)
+
+    // If previous balance is zero, we can't calculate percentage change
+    if (prevNotifiedSales === 0) return null
+
+    // Calculate percentage change
+    const percentChange = ((row.notifiedSalesBalanceGBP - prevNotifiedSales) / prevNotifiedSales) * 100
+
+    // Round to 1 decimal place
+    return Math.round(percentChange * 10) / 10
   }
 
   // Compute load status for display
@@ -977,6 +1051,8 @@ export default function CompaniesTable() {
                   funding={getFunding(row)}
                   hasBalanceChanged={hasBalanceChanged(row)}
                   notifiedSalesBalanceChange={getNotifiedSalesBalanceChange(row)}
+                  notifiedSalesBalancePercentChange={getNotifiedSalesBalancePercentChange(row)}
+                  hasMixedCurrencies={hasMixedCurrencies(row)}
                   onEdit={(id) => {
                     const row = data.find(d => d.id === id)
                     if (!row) return

@@ -121,12 +121,30 @@ function seedPurchaseTransactions(companyId: string, count = 10): Transaction[] 
 
 function seedCustomers(companyId: string, count = 8): Customer[] {
   const arr: Customer[] = []
+  // Determine if this company will have mixed currencies based on company ID
+  // For demo purposes, companies with IDs divisible by 3 will have mixed currencies
+  const hasMixedCurrencies = Number(companyId) % 3 === 0
+
+  // Default currency is GBP
+  let defaultCurrency = 'GBP'
+
+  // For mixed currency companies, we'll use different currencies for some customers
+  const currencies = ['GBP', 'USD', 'EUR', 'CAD', 'AUD']
+
   for (let i = 0; i < count; i++) {
     const outstanding = Math.round((Math.random() * 20000) * 100) / 100
     const notified = i % 2 === 0 // alternate for demo purposes
     // Generate a debtor pool reference for some customers; others are not pooled
     const isPooled = i % 3 !== 0
     const poolRef = isPooled ? `${String(1000000 + (i * 79)).padStart(7, '0')}:${String(1 + (i % 999)).padStart(3, '0')}` : 'not-pooled'
+
+    // Assign currency - for mixed currency companies, vary the currency based on customer index
+    let currencyCode = defaultCurrency
+    if (hasMixedCurrencies && i > 0) {
+      // Use a different currency for some customers
+      currencyCode = currencies[i % currencies.length]
+    }
+
     arr.push({
       id: `${companyId}-cust-${i+1}`,
       name: `Customer ${i+1}`,
@@ -135,6 +153,7 @@ function seedCustomers(companyId: string, count = 8): Customer[] {
       address: `${10 + i} High Street, Townsville`,
       notified,
       debtorPoolRef: poolRef,
+      currencyCode,
     })
   }
   return arr

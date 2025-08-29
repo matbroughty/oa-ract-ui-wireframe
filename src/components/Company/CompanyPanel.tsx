@@ -39,6 +39,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalCloseButton,
+  useColorModeValue,
 } from '@chakra-ui/react'
 import { TriangleDownIcon, TriangleUpIcon, SearchIcon, TimeIcon, DownloadIcon, CalendarIcon, ExternalLinkIcon } from '@chakra-ui/icons'
 import { Registration, getCompanyRegistrations } from '../../data/registrations'
@@ -121,6 +122,7 @@ export type Customer = {
   exportDelayDays?: number
   contraLinked?: boolean
   contraLinkedId?: string
+  currencyCode?: string // Transaction currency code
 }
 
 function formatGBP(value: number) {
@@ -276,6 +278,10 @@ export default function CompanyPanel({
   suppliers: Customer[]
   funding?: 'Not funded' | 'Company' | 'Pool'
 }) {
+  // Generate a mock company address for demo purposes
+  const companyAddress = useMemo(() => {
+    return `${company.reference} Corporate Plaza\nBusiness District\nLondon, UK\nEC1A 1BB`
+  }, [company.reference])
   const [txFilter, setTxFilter] = useState<'open' | 'closed'>('open')
   const [customerOpen, setCustomerOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
@@ -718,20 +724,20 @@ export default function CompanyPanel({
     <>
     <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="xl">
       <DrawerOverlay />
-      <DrawerContent w={{ base: '100%', md: '85vw', lg: '80vw' }} maxW="none">
-        <DrawerHeader borderBottomWidth="1px">
+      <DrawerContent w={{ base: '100%', md: '85vw', lg: '80vw' }} maxW="none" bg={useColorModeValue("white", "gray.900")}>
+        <DrawerHeader borderBottomWidth="1px" bg={useColorModeValue("white", "gray.800")}>
           <HStack justify="space-between">
             <VStack align="start" spacing={0}>
-              <Text fontWeight="semibold">{company.name}</Text>
-              <Text fontSize="sm" color="gray.600">{company.reference} · {company.email}</Text>
+              <Text fontWeight="semibold" color={useColorModeValue("gray.800", "white")}>{company.name}</Text>
+              <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")}>{company.reference} · {company.email}</Text>
             </VStack>
             <Button onClick={onClose} variant="outline">Close</Button>
           </HStack>
         </DrawerHeader>
-        <DrawerBody>
+        <DrawerBody bg={useColorModeValue("white", "gray.900")}>
           <Stack spacing={6} py={2}>
             {/* Timeline at the top, centered */}
-            <Card>
+            <Card bg={useColorModeValue("white", "gray.800")} borderColor={useColorModeValue("gray.200", "gray.700")}>
               <CardBody>
                 <HStack justify="center" align="center" spacing={8} flexWrap="wrap">
                   {(() => {
@@ -775,15 +781,23 @@ export default function CompanyPanel({
               </CardBody>
             </Card>
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              <Card>
+              <Card bg={useColorModeValue("white", "gray.800")} borderColor={useColorModeValue("gray.200", "gray.700")}>
                 <CardBody>
                   <Stack spacing={2}>
-                    <Text fontSize="sm" color="gray.600">Company party</Text>
-                    <Text fontSize="lg" fontWeight="semibold">{company.name}</Text>
-                    <Text fontSize="sm" color="gray.600">{company.email}</Text>
-                    <Text fontSize="sm" color="gray.600">Reference: {company.reference}</Text>
-                    <HStack>
-                      <Text fontSize="sm" color="gray.600">Funding:</Text>
+                    <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.400")}>Company party</Text>
+                    <HStack spacing={4} align="flex-start">
+                      <VStack align="start" spacing={1} flex="1">
+                        <Text fontSize="lg" fontWeight="semibold" color={useColorModeValue("gray.800", "white")}>{company.name}</Text>
+                        <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")}>{company.email}</Text>
+                        <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")}>Reference: {company.reference}</Text>
+                      </VStack>
+                      <VStack align="start" spacing={1} flex="1">
+                        <Text fontSize="sm" fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>Address</Text>
+                        <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")} whiteSpace="pre-line">{companyAddress}</Text>
+                      </VStack>
+                    </HStack>
+                    <HStack mt={2}>
+                      <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")}>Funding:</Text>
                       <Badge colorScheme={funding === 'Pool' ? 'purple' : funding === 'Company' ? 'blue' : 'gray'} variant="subtle">{funding || 'Not funded'}</Badge>
                       {funding === 'Pool' && (
                         <Button size="xs" colorScheme="purple" variant="outline" onClick={() => setPoolOpen(true)}>View Pool Level Data</Button>
@@ -806,24 +820,24 @@ export default function CompanyPanel({
                   </Stack>
                 </CardBody>
               </Card>
-              <Card>
+              <Card bg={useColorModeValue("white", "gray.800")} borderColor={useColorModeValue("gray.200", "gray.700")}>
                 <CardBody>
                   <Stack spacing={3}>
-                    <Text fontSize="sm" color="gray.600">Balances</Text>
+                    <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.400")}>Balances</Text>
                     <Grid templateColumns="1fr auto" rowGap={2} columnGap={4}>
-                      <Text>Sales ledger balance</Text>
-                      <Text fontWeight="semibold">{formatGBP(balances.salesLedgerBalance)}</Text>
-                      <Text>Notified sales ledger</Text>
-                      <Text fontWeight="semibold">{formatGBP(balances.notifiedSalesLedgerBalance)}</Text>
+                      <Text color={useColorModeValue("gray.700", "gray.200")}>Sales ledger balance</Text>
+                      <Text fontWeight="semibold" color={useColorModeValue("gray.800", "white")}>{formatGBP(balances.salesLedgerBalance)}</Text>
+                      <Text color={useColorModeValue("gray.700", "gray.200")}>Notified sales ledger</Text>
+                      <Text fontWeight="semibold" color={useColorModeValue("gray.800", "white")}>{formatGBP(balances.notifiedSalesLedgerBalance)}</Text>
                     </Grid>
                     <Divider />
                     <Grid templateColumns="1fr auto" rowGap={2} columnGap={4}>
-                      <Text color="gray.600">Invoices</Text>
-                      <Text>{formatGBP(balances.invoices)}</Text>
-                      <Text color="gray.600">Credit notes</Text>
-                      <Text>{formatGBP(balances.creditNotes)}</Text>
-                      <Text color="gray.600">Open cash</Text>
-                      <Text>{formatGBP(balances.openCash)}</Text>
+                      <Text color={useColorModeValue("gray.600", "gray.400")}>Invoices</Text>
+                      <Text color={useColorModeValue("gray.700", "gray.300")}>{formatGBP(balances.invoices)}</Text>
+                      <Text color={useColorModeValue("gray.600", "gray.400")}>Credit notes</Text>
+                      <Text color={useColorModeValue("gray.700", "gray.300")}>{formatGBP(balances.creditNotes)}</Text>
+                      <Text color={useColorModeValue("gray.600", "gray.400")}>Open cash</Text>
+                      <Text color={useColorModeValue("gray.700", "gray.300")}>{formatGBP(balances.openCash)}</Text>
                     </Grid>
                   </Stack>
                 </CardBody>
