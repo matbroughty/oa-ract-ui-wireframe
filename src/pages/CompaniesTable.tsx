@@ -1177,8 +1177,8 @@ export default function CompaniesTable() {
               <CardBody>
                 <Stack spacing={3}>
                   <HStack justify="space-between" align="center">
-                    <Text fontWeight="semibold">Snapshot History</Text>
                     <HStack spacing={3}>
+                      <Text fontWeight="semibold">Snapshot History</Text>
                       <ExportButton 
                         data={sortedFilteredSnapshots}
                         filename={`snapshots_${snapshotTarget?.name.replace(/\s+/g, '_').toLowerCase() || 'company'}.csv`}
@@ -1193,6 +1193,8 @@ export default function CompaniesTable() {
                         ]}
                         size="sm"
                       />
+                    </HStack>
+                    <HStack spacing={3}>
                       <Input type="date" size="sm" value={snapFromDate} onChange={(e) => setSnapFromDate(e.target.value)} />
                       <Input type="date" size="sm" value={snapToDate} onChange={(e) => setSnapToDate(e.target.value)} />
                       <Button size="sm" onClick={() => { setSnapFromDate(''); setSnapToDate('') }}>Clear</Button>
@@ -1440,8 +1442,8 @@ export default function CompaniesTable() {
     {/* Extract File modal */}
     <Modal isOpen={!!extractSnapshot} onClose={closeExtractModal} size="6xl">
       <ModalOverlay />
-      <ModalContent maxW="90vw">
-        <ModalHeader>Extract File — {snapshotTarget?.name || ''}</ModalHeader>
+      <ModalContent maxW="90vw" bg={useColorModeValue("white", "gray.800")}>
+        <ModalHeader color={useColorModeValue("gray.800", "gray.100")}>Extract File — {snapshotTarget?.name || ''}</ModalHeader>
         <ModalCloseButton />
         <ModalBody maxH="70vh" overflowY="auto">
           {extractSnapshot && (
@@ -1450,8 +1452,8 @@ export default function CompaniesTable() {
                 <Badge colorScheme="purple">Date received: {new Date(new Date(extractSnapshot.loadDate).getTime() - 3*60*60*1000).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</Badge>
                 <Badge colorScheme="green">Date loaded: {new Date(extractSnapshot.loadDate).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</Badge>
               </HStack>
-              <Box borderWidth="1px" borderRadius="md" p={3} bg="gray.50" maxH="65vh" overflow="auto">
-                <Box as="pre" fontSize="sm" fontFamily="mono" whiteSpace="pre">{extractXML}</Box>
+              <Box borderWidth="1px" borderRadius="md" p={3} bg={useColorModeValue("gray.50", "gray.700")} maxH="65vh" overflow="auto">
+                <Box as="pre" fontSize="sm" fontFamily="mono" whiteSpace="pre" color={useColorModeValue("gray.800", "gray.100")}>{extractXML}</Box>
               </Box>
             </Stack>
           )}
@@ -1532,8 +1534,8 @@ export default function CompaniesTable() {
     {/* Transactions modal */}
     <Modal isOpen={!!transactionsSnapshot} onClose={closeTransactionsModal} size="xl">
       <ModalOverlay />
-      <ModalContent maxH="90vh">
-        <ModalHeader>
+      <ModalContent maxH="90vh" bg={useColorModeValue("white", "gray.800")}>
+        <ModalHeader color={useColorModeValue("gray.800", "gray.100")}>
           {snapshotTransactions.length === 1 && snapshotTransactions[0].changeStatus 
             ? `Transaction Details — ${snapshotTransactions[0].changeStatus}` 
             : `New Transactions — ${snapshotTarget?.name || ''}`}
@@ -1543,7 +1545,7 @@ export default function CompaniesTable() {
           {transactionsSnapshot && (
             <Stack spacing={4}>
               <HStack justify="space-between">
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.300")}>
                   Load date: {new Date(transactionsSnapshot.loadDate).toLocaleDateString('en-GB')} | 
                   New items: {transactionsSnapshot.newItemCount}
                 </Text>
@@ -1583,27 +1585,27 @@ export default function CompaniesTable() {
                   </Thead>
                   <Tbody>
                     {snapshotTransactions.map(tx => (
-                      <Tr key={tx.id} _hover={{ bg: 'gray.50' }}>
+                      <Tr key={tx.id} _hover={{ bg: useColorModeValue("gray.50", "gray.700") }}>
                         <Td>
-                          <Text fontWeight="medium">{tx.customerName}</Text>
-                          <Text fontSize="xs" color="gray.500">{tx.customerRef}</Text>
+                          <Text fontWeight="medium" color={useColorModeValue("gray.800", "white")}>{tx.customerName}</Text>
+                          <Text fontSize="xs" color={useColorModeValue("gray.500", "gray.400")}>{tx.customerRef}</Text>
                         </Td>
-                        <Td>{tx.type}</Td>
-                        <Td>{tx.document}</Td>
-                        <Td>{new Date(tx.documentDate).toLocaleDateString('en-GB')}</Td>
-                        <Td>{new Date(tx.entryDate).toLocaleDateString('en-GB')}</Td>
-                        <Td isNumeric>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.amount)}</Td>
-                        <Td isNumeric>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.remaining)}</Td>
-                        <Td>{new Date(tx.dueDate).toLocaleDateString('en-GB')}</Td>
-                        <Td>{tx.notified ? 'Yes' : 'No'}</Td>
+                        <Td color={useColorModeValue("gray.800", "gray.100")}>{tx.type}</Td>
+                        <Td color={useColorModeValue("gray.800", "gray.100")}>{tx.document}</Td>
+                        <Td color={useColorModeValue("gray.800", "gray.100")}>{new Date(tx.documentDate).toLocaleDateString('en-GB')}</Td>
+                        <Td color={useColorModeValue("gray.800", "gray.100")}>{new Date(tx.entryDate).toLocaleDateString('en-GB')}</Td>
+                        <Td isNumeric color={useColorModeValue("gray.800", "gray.100")}>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.amount)}</Td>
+                        <Td isNumeric color={useColorModeValue("gray.800", "gray.100")}>{new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(tx.remaining)}</Td>
+                        <Td color={useColorModeValue("gray.800", "gray.100")}>{new Date(tx.dueDate).toLocaleDateString('en-GB')}</Td>
+                        <Td color={useColorModeValue("gray.800", "gray.100")}>{tx.notified ? 'Yes' : 'No'}</Td>
                       </Tr>
                     ))}
                   </Tbody>
                 </Table>
               </TableContainer>
 
-              <Box p={4} bg="gray.50" borderRadius="md">
-                <Text fontSize="sm" fontStyle="italic">
+              <Box p={4} bg={useColorModeValue("gray.50", "gray.700")} borderRadius="md">
+                <Text fontSize="sm" fontStyle="italic" color={useColorModeValue("gray.600", "gray.300")}>
                   These are the new transactions that were added in this snapshot. Click on a row to see more details.
                 </Text>
               </Box>
