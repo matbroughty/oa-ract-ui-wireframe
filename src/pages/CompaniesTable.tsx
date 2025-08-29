@@ -1,5 +1,5 @@
 
-import { Card, CardBody, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Icon, Input, InputGroup, InputLeftElement, HStack, Box, Text, Flex, useDisclosure, Button, Link, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, useClipboard, Stack, Checkbox, Select, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, Badge, Divider, useToast, Tooltip } from '@chakra-ui/react'
+import { Card, CardBody, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Icon, Input, InputGroup, InputLeftElement, HStack, Box, Text, Flex, useDisclosure, Button, Link, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton, useClipboard, Stack, Checkbox, Select, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, Badge, Divider, useToast, Tooltip, useColorModeValue } from '@chakra-ui/react'
 import { TriangleDownIcon, TriangleUpIcon, SearchIcon, AddIcon, DownloadIcon } from '@chakra-ui/icons'
 import ExportButton from '../components/Common/ExportButton'
 import { useMemo, useState } from 'react'
@@ -154,6 +154,28 @@ export default function CompaniesTable() {
 
     // If current balances are different from previous balances, there's a change
     return prevSales !== row.salesBalanceGBP || prevPurchase !== row.purchaseBalanceGBP
+  }
+
+  // Determine the change direction in notified sales balance
+  function getNotifiedSalesBalanceChange(row: CompanyRow): 'increase' | 'decrease' | 'no-change' {
+    // Make specific companies not show balance changes (IDs 3, 7, and 12)
+    if (['3', '7', '12'].includes(row.id)) return 'no-change'
+
+    // If notified sales balance is zero, there's no change
+    if ((row.notifiedSalesBalanceGBP || 0) === 0) return 'no-change'
+
+    // For demo purposes, we'll calculate the previous notified sales balance
+    // as 5% less than the current sales balance (similar to how it's initialized)
+    const prevNotifiedSales = Math.max(0, Math.round(row.salesBalanceGBP * 0.95 * 0.95 * 100) / 100)
+
+    // Determine the change direction
+    if (row.notifiedSalesBalanceGBP > prevNotifiedSales) {
+      return 'increase'
+    } else if (row.notifiedSalesBalanceGBP < prevNotifiedSales) {
+      return 'decrease'
+    } else {
+      return 'no-change'
+    }
   }
 
   // Compute load status for display
@@ -760,6 +782,68 @@ export default function CompaniesTable() {
     setExportsList([])
   }
 
+  // Desktop connector modal state and helpers
+  type DesktopConnectorDetail = { name: string; value: string }
+  const [desktopConnectorDetails, setDesktopConnectorDetails] = useState<DesktopConnectorDetail[]>([])
+  const [desktopConnectorCompany, setDesktopConnectorCompany] = useState<string | null>(null)
+  const desktopConnectorModal = useDisclosure()
+
+  function handleConnectorClick(id: string) {
+    const row = data.find(d => d.id === id)
+    if (!row || row.status !== 'desktop') return
+
+    // Generate name/value pairs for the Desktop connector based on connector.properties format
+    // In a real application, this would fetch actual data from an API
+    const details: DesktopConnectorDetail[] = [
+      { name: 'sageLine50.password', value: '{OBF}1daf1igh1vfz1y0q1y121y0o1y101vgv1idp1d9z' },
+      { name: 'jnlp.ua-file-extensions', value: 'csv,txt' },
+      { name: 'jnlp.closed-item-cutoff', value: '150' },
+      { name: 'jnlp.shortcut-name', value: `${row.name}_Connector_001` },
+      { name: '#javaVersion', value: '1.8.0_222' },
+      { name: 'jnlp.ua-extract-files', value: '' },
+      { name: 'jnlp.upload-url', value: 'https://oa-external.lendscape.com\\' },
+      { name: '#operatingSystem', value: 'Windows Server 2019' },
+      { name: 'jnlp.service.extract.scheduled.recurrence', value: 'DAILY 09\\:41\\:30 NYYYYYN' },
+      { name: 'jnlp.pid', value: '183632' },
+      { name: 'jnlp.app-name', value: `${row.name}_Connector` },
+      { name: '#proxyPort', value: '' },
+      { name: 'sageLine50.user', value: 'MANAGER' },
+      { name: 'jnlp.extractor.version', value: '3.5.1' },
+      { name: '#appdir', value: 'C\\:\\\\Users\\\\' + row.reference + '\\\\AppData\\\\Roaming\\\\' + row.name + '_Connector_001\\\\extractor' },
+      { name: 'jnlp.last-failed', value: 'false' },
+      { name: 'jnlp.days-closed', value: '400' },
+      { name: '#userName', value: row.reference },
+      { name: 'jnlp.secondary-url', value: 'https://oa-external.lendscape.com\\' },
+      { name: 'sageLine50.driver', value: 'Sage Line 50 v28' },
+      { name: '#osArchitecture', value: '32' },
+      { name: 'jnlp.client-reference', value: '0000080' },
+      { name: 'jnlp.extractor-code', value: 'e101ef00-f02f-4e42-af30-6528b453758c' },
+      { name: 'jnlp.scheduled-date-check', value: '2508290727' },
+      { name: 'jnlp.instruction', value: 'startup' },
+      { name: 'jnlp.help-url', value: 'https://oa-external.lendscape.com\\/help/index' },
+      { name: 'jnlp.auto-update', value: 'true' },
+      { name: 'sageLine50.directory', value: 'G\\:\\\\RICHBURNS' },
+      { name: 'jnlp.central.version', value: '3.6.3' },
+      { name: 'jnlp.excel-output', value: 'false' },
+      { name: '#proxyURL', value: '' },
+      { name: 'jnlp.days-to-extract-closed-items', value: '400' },
+      { name: 'jnlp.ua-file-Size', value: '10' },
+      { name: 'jnlp.last-extract-date', value: '2508280944' },
+      { name: 'jnlp.excel-lock', value: '' },
+      { name: 'jnlp.ua-extract', value: 'false' },
+      { name: 'jnlp.bank-extract', value: 'false' },
+      { name: '#isJws', value: 'false' },
+      { name: 'jnlp.extractor', value: 'sageLine50' },
+      { name: 'jnlp.nominal-extract', value: 'false' },
+      { name: 'jnlp.ua-file-size', value: '10' },
+      { name: 'jnlp.ledger-reference', value: '001' }
+    ]
+
+    setDesktopConnectorDetails(details)
+    setDesktopConnectorCompany(row.name)
+    desktopConnectorModal.onOpen()
+  }
+
   // Export file viewer
   const [viewFile, setViewFile] = useState<{ name: string; content: string } | null>(null)
   function openViewFile(name: string, content?: string) {
@@ -892,6 +976,7 @@ export default function CompaniesTable() {
                   hoverTitle={buildHoverTitle(row)}
                   funding={getFunding(row)}
                   hasBalanceChanged={hasBalanceChanged(row)}
+                  notifiedSalesBalanceChange={getNotifiedSalesBalanceChange(row)}
                   onEdit={(id) => {
                     const row = data.find(d => d.id === id)
                     if (!row) return
@@ -904,6 +989,7 @@ export default function CompaniesTable() {
                   onSnapshot={(id) => handleSnapshotClick(id)}
                   onChangeClick={(id) => handleChangeClick(id)}
                   onFundingClick={(id) => handleFundingClick(id)}
+                  onConnectorClick={(id) => handleConnectorClick(id)}
                 />
               ))}
             </Tbody>
@@ -1608,6 +1694,41 @@ export default function CompaniesTable() {
         </ModalBody>
         <ModalFooter>
           <Button variant="ghost" onClick={closeChangeTransactionsModal}>Close</Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+
+    {/* Desktop Connector Details Modal */}
+    <Modal isOpen={desktopConnectorModal.isOpen} onClose={desktopConnectorModal.onClose} size="lg">
+      <ModalOverlay />
+      <ModalContent bg={useColorModeValue("white", "gray.800")}>
+        <ModalHeader color={useColorModeValue("gray.800", "gray.100")}>Desktop Connector Properties</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          {desktopConnectorCompany && (
+            <Text mb={4} color={useColorModeValue("gray.700", "gray.200")}>
+              connector.properties for <Text as="span" fontWeight="semibold" color={useColorModeValue("gray.800", "gray.100")}>{desktopConnectorCompany}</Text>
+            </Text>
+          )}
+          <Box 
+            bg={useColorModeValue("gray.50", "gray.700")} 
+            p={4} 
+            borderRadius="md" 
+            fontFamily="mono" 
+            fontSize="sm" 
+            whiteSpace="pre-wrap" 
+            overflowX="auto"
+          >
+            <Text color={useColorModeValue("gray.600", "gray.300")} mb={2}>#Fri Aug 29 07:27:48 BST 2025</Text>
+            {desktopConnectorDetails.map((detail, index) => (
+              <Text key={index} mb={1} color={useColorModeValue("gray.800", "gray.100")}>
+                {detail.name}={detail.value}
+              </Text>
+            ))}
+          </Box>
+        </ModalBody>
+        <ModalFooter>
+          <Button onClick={desktopConnectorModal.onClose} colorScheme={useColorModeValue("blue", "teal")}>Close</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

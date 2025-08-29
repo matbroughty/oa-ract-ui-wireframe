@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast, Menu, MenuButton, MenuList, MenuItem, Image, useDisclosure, useColorMode, IconButton } from '@chakra-ui/react'
+import { Box, Card, CardBody, Container, Divider, Flex, Grid, GridItem, Heading, HStack, Icon, Spacer, Stack, Text, VStack, Button, useToast, Menu, MenuButton, MenuList, MenuItem, Image, useDisclosure, useColorMode, IconButton, useColorModeValue } from '@chakra-ui/react'
 import logoImage from './oa-rev.png'
 import { SettingsIcon, AtSignIcon, TimeIcon, InfoIcon, ViewIcon, ChevronDownIcon, MoonIcon, SunIcon } from '@chakra-ui/icons'
 import LoginView from './components/Auth/LoginView'
@@ -242,12 +242,12 @@ export default function App() {
               <Divider />
               <Box 
                 p={4} 
-                bg="blue.50" 
+                bg={useColorModeValue("blue.50", "blue.900")} 
                 borderRadius="lg" 
                 borderLeft="4px solid" 
                 borderColor="blue.400"
               >
-                <Text color="gray.700" fontWeight="medium">
+                <Text color={useColorModeValue("gray.700", "gray.200")} fontWeight="medium">
                   This panel shows a summary of system activity including company loads, funding exports, notified invoices, and new customers.
                 </Text>
               </Box>
@@ -288,53 +288,53 @@ export default function App() {
 
               {/* Additional system metrics */}
               <Box mt={4}>
-                <Heading size="sm" mb={4} color="gray.700">System Performance Metrics</Heading>
+                <Heading size="sm" mb={4} color={useColorModeValue("gray.700", "gray.200")}>System Performance Metrics</Heading>
                 <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={4}>
                   <GridItem>
                     <HStack 
                       p={4} 
-                      bg="white" 
+                      bg={useColorModeValue("white", "gray.700")} 
                       borderRadius="lg" 
                       borderWidth="1px" 
-                      borderColor="gray.200"
+                      borderColor={useColorModeValue("gray.200", "gray.600")}
                       boxShadow="sm"
                     >
                       <Icon as={TimeIcon} boxSize={5} color="purple.500" />
                       <Box>
-                        <Text fontWeight="medium" fontSize="sm">Average Response Time</Text>
-                        <Text fontWeight="bold" color="purple.600">1.2 seconds</Text>
+                        <Text fontWeight="medium" fontSize="sm" color={useColorModeValue("gray.700", "gray.200")}>Average Response Time</Text>
+                        <Text fontWeight="bold" color={useColorModeValue("purple.600", "purple.300")}>1.2 seconds</Text>
                       </Box>
                     </HStack>
                   </GridItem>
                   <GridItem>
                     <HStack 
                       p={4} 
-                      bg="white" 
+                      bg={useColorModeValue("white", "gray.700")} 
                       borderRadius="lg" 
                       borderWidth="1px" 
-                      borderColor="gray.200"
+                      borderColor={useColorModeValue("gray.200", "gray.600")}
                       boxShadow="sm"
                     >
                       <Icon as={ViewIcon} boxSize={5} color="teal.500" />
                       <Box>
-                        <Text fontWeight="medium" fontSize="sm">System Uptime</Text>
-                        <Text fontWeight="bold" color="teal.600">99.98%</Text>
+                        <Text fontWeight="medium" fontSize="sm" color={useColorModeValue("gray.700", "gray.200")}>System Uptime</Text>
+                        <Text fontWeight="bold" color={useColorModeValue("teal.600", "teal.300")}>99.98%</Text>
                       </Box>
                     </HStack>
                   </GridItem>
                   <GridItem>
                     <HStack 
                       p={4} 
-                      bg="white" 
+                      bg={useColorModeValue("white", "gray.700")} 
                       borderRadius="lg" 
                       borderWidth="1px" 
-                      borderColor="gray.200"
+                      borderColor={useColorModeValue("gray.200", "gray.600")}
                       boxShadow="sm"
                     >
                       <Icon as={AtSignIcon} boxSize={5} color="orange.500" />
                       <Box>
-                        <Text fontWeight="medium" fontSize="sm">Active Users</Text>
-                        <Text fontWeight="bold" color="orange.600">87</Text>
+                        <Text fontWeight="medium" fontSize="sm" color={useColorModeValue("gray.700", "gray.200")}>Active Users</Text>
+                        <Text fontWeight="bold" color={useColorModeValue("orange.600", "orange.300")}>87</Text>
                       </Box>
                     </HStack>
                   </GridItem>

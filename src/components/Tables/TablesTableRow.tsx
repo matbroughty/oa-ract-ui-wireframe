@@ -1,6 +1,6 @@
 
-import { Badge, HStack, IconButton, Td, Text, Tr, Tooltip, VStack } from '@chakra-ui/react'
-import { EditIcon, SmallCloseIcon, RepeatIcon, TimeIcon } from '@chakra-ui/icons'
+import { Badge, HStack, IconButton, Td, Text, Tr, Tooltip, VStack, Icon } from '@chakra-ui/react'
+import { EditIcon, SmallCloseIcon, RepeatIcon, TimeIcon, TriangleUpIcon, TriangleDownIcon } from '@chakra-ui/icons'
 
 export type CompanyRow = {
   id: string
@@ -24,6 +24,7 @@ export default function TablesTableRow(props: CompanyRow & {
   hoverTitle?: string
   funding?: 'Not funded' | 'Company' | 'Pool'
   hasBalanceChanged?: boolean
+  notifiedSalesBalanceChange?: 'increase' | 'decrease' | 'no-change'
   onEdit?: (id: string) => void
   onClear?: (id: string) => void
   onSelect?: (id: string) => void
@@ -33,7 +34,7 @@ export default function TablesTableRow(props: CompanyRow & {
   onFundingClick?: (id: string) => void
   onConnectorClick?: (id: string) => void
 }) {
-  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, notifiedSalesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, onChangeClick, onFundingClick, onConnectorClick, connector, loadStatus, hoverTitle, funding, hasBalanceChanged } = props
+  const { id, name, email, reference, lastLoadDate, salesBalanceGBP, notifiedSalesBalanceGBP, purchaseBalanceGBP, status, onEdit, onClear, onSelect, onRefresh, onSnapshot, onChangeClick, onFundingClick, onConnectorClick, connector, loadStatus, hoverTitle, funding, hasBalanceChanged, notifiedSalesBalanceChange } = props
   const isCloud = status === 'cloud'
   const badgeColor = isCloud ? 'green' : 'gray'
   const connectorLabel = isCloud ? (connector === 'native' ? 'Native Cloud' : connector === 'codat' ? 'Codat' : connector === 'validis' ? 'Validis' : 'Cloud') : 'Desktop'
@@ -70,7 +71,16 @@ export default function TablesTableRow(props: CompanyRow & {
         <Text>{formatGBP(salesBalanceGBP)}</Text>
       </Td>
       <Td isNumeric>
-        <Text>{formatGBP(notifiedSalesBalanceGBP)}</Text>
+        <HStack spacing={1} justifyContent="flex-end">
+          <Text>{formatGBP(notifiedSalesBalanceGBP)}</Text>
+          {notifiedSalesBalanceChange === 'increase' ? (
+            <Icon as={TriangleUpIcon} color="green.500" />
+          ) : notifiedSalesBalanceChange === 'decrease' ? (
+            <Icon as={TriangleDownIcon} color="red.500" />
+          ) : (
+            <Text color="gray.500">-</Text>
+          )}
+        </HStack>
       </Td>
       <Td isNumeric>
         <Text>{formatGBP(purchaseBalanceGBP)}</Text>
@@ -95,7 +105,23 @@ export default function TablesTableRow(props: CompanyRow & {
         )}
       </Td>
       <Td>
-        <Badge colorScheme={badgeColor} variant="subtle">{connectorLabel}</Badge>
+        {status === 'desktop' ? (
+          <Tooltip label="Click to view Desktop connector details">
+            <Badge 
+              colorScheme={badgeColor} 
+              variant="subtle" 
+              cursor="pointer"
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                onConnectorClick?.(id); 
+              }}
+            >
+              {connectorLabel}
+            </Badge>
+          </Tooltip>
+        ) : (
+          <Badge colorScheme={badgeColor} variant="subtle">{connectorLabel}</Badge>
+        )}
       </Td>
       <Td>
         <Badge colorScheme={statusColor(loadStatus)} variant="subtle">{loadStatus || 'no load'}</Badge>
